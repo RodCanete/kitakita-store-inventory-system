@@ -1,0 +1,249 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Authentication page styles */
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+}
+
+.auth-left,
+.auth-right {
+  flex: 1 1 50%;
+}
+
+.auth-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.brand-wrap {
+  text-align: center;
+}
+
+.brand-logo {
+  width: 240px;
+  height: auto;
+}
+
+.brand-title {
+  margin-top: 18px;
+  font-size: 36px; /* increased for better visibility */
+  color: #0b84ff;
+  letter-spacing: 1px;
+}
+
+.auth-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f8fb;
+}
+
+.form-card {
+  width: 420px;
+  background: #ffffff;
+  text-align: left;
+  padding: 32px 34px;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.form-error {
+  background: #fff4f4;
+  color: #9b1c1c;
+  border: 1px solid #ffdada;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.brand-small {
+  width: 48px;
+  display: block;
+  margin: 0 auto 8px auto;
+}
+
+.field { margin-bottom: 12px; }
+
+.input:focus {
+  outline: none;
+  border-color: #0b63e8;
+  box-shadow: 0 0 0 6px rgba(11,99,232,0.06);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 12px 0;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e6eefc;
+}
+
+.divider span { margin: 0 12px; color: #9aa7c7; font-size: 13px; }
+
+.small-link, .link-button {
+  background: none;
+  border: none;
+  color: #1570ef;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.form-card h2 {
+  text-align: left;
+  margin: 6px 0 6px 0;
+  font-size: 28px; /* larger heading */
+  line-height: 1.1;
+}
+
+.muted {
+  color: #6b7280;
+  margin-bottom: 18px;
+  font-size: 16px; /* slightly larger subtitle */
+}
+
+.input-label {
+  display: block;
+  font-size: 15px; /* increased label size */
+  color: #333;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px; /* slightly more padding */
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  box-sizing: border-box;
+  font-size: 16px; /* larger input text */
+}
+
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0 16px 0;
+}
+
+.checkbox input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.small-link {
+  color: #1570ef;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.btn-primary {
+  width: 100%;
+  background: #0b63e8;
+  color: #fff;
+  border: none;
+  padding: 12px 14px; /* larger clickable area */
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.btn-google {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #e6e6e6;
+  padding: 12px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.g-icon {
+  background: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d93025;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.footer-text {
+  text-align: center;
+  margin-top: 14px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.link-button {
+  border: none;
+  background: none;
+  color: #0b63e8;
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .auth-page { flex-direction: column; }
+  .auth-left, .auth-right { flex: none; width: 100%; }
+  .brand-logo { width: 160px; }
+  .form-card { width: 92%; margin: 24px auto; padding: 22px; }
+}
+
