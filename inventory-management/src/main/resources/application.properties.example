@@ -1,0 +1,17 @@
+# Spring profile
+spring.application.name=kitakita-inventory
+
+# Database connection
+spring.datasource.url=jdbc:mysql://localhost:3306/kitakita_db
+spring.datasource.username=DB_USERNAME
+spring.datasource.password=DB_PASSWORD
+
+# JPA settings
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+
+# JWT configuration
+jwt.secret=REPLACE_WITH_256_BIT_SECRET
+jwt.expiration=86400000
+

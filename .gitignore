@@ -1,0 +1,110 @@
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.lnk
+
+# Editor / IDE metadata
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# Logs & temp files
+*.log
+*.tmp
+*.bak
+*.orig
+
+# Python / tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+
+# Node / React artifacts
+kitakita-app/node_modules/
+kitakita-app/build/
+kitakita-app/dist/
+kitakita-app/.env
+kitakita-app/.env.*
+kitakita-app/.parcel-cache/
+kitakita-app/coverage/
+
+# Maven / Java artifacts
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.db
+hs_err_pid*
+
+# Spring/Sensitive configs
+inventory-management/src/main/resources/application.properties
+inventory-management/src/main/resources/application-*.properties
+inventory-management/.env
+
+# OS-specific folders
+$RECYCLE.BIN/
+System Volume Information/
+
+# Generated reports
+**/surefire-reports/
+**/failsafe-reports/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.iml
+.idea/
+.vscode/
+
+# General build output
+dist/
+build/
+out/
+*.log
+*.tmp
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+
+# Java / Maven backend
+inventory-management/target/
+inventory-management/*.iml
+inventory-management/.classpath
+inventory-management/.project
+inventory-management/.settings/
+inventory-management/.idea/
+inventory-management/*.log
+inventory-management/src/main/resources/application.properties
+
+# Node / React frontend
+kitakita-app/node_modules/
+kitakita-app/.env.local
+kitakita-app/.env.development.local
+kitakita-app/.env.test.local
+kitakita-app/.env.production.local
+kitakita-app/npm-debug.log*
+kitakita-app/yarn-debug.log*
+kitakita-app/yarn-error.log*
+
+# Coverage / test artifacts
+coverage/
+kitakita-app/coverage/
+inventory-management/surefire-reports/
+
+# Generated jars
+inventory-management/*.jar
+inventory-management/*.war
+inventory-management/*.ear
+
