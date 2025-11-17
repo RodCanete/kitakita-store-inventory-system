@@ -56,28 +56,3 @@ Full-stack inventory management platform composed of a Spring Boot REST API (`in
 
    Use `npm test` for unit tests and `npm run build` for production builds.
 
-## Recommended Repository Additions
-
-- **License** – add `LICENSE` (MIT/Apache-2.0/etc.) so others know how to use the code.
-- **Frontend README** – replace the CRA default with project-specific usage notes, screenshots, and API references.
-- **CONTRIBUTING.md** – document branching strategy, coding standards, and PR requirements for collaborators.
-- **CI/CD** – create GitHub Actions workflows (lint, test, build) so every PR is validated automatically.
-- **Issue templates** – standardize bug reports/feature requests with GitHub issue/PR templates.
-- **Database migrations** – consider Flyway or Liquibase to version schema changes alongside the backend code.
-
-## Tips for Your First GitHub Push
-
-1. Run `git init` at the repo root (or create it via GitHub and clone).
-2. Keep secrets ignored (`application.properties`, `.env`, `target/`, `node_modules/`, etc.).
-3. Commit meaningful slices:
-
-   ```bash
-   git add .
-   git commit -m "chore: initial project import"
-   git remote add origin git@github.com:<user>/<repo>.git
-   git push -u origin main
-   ```
-
-4. Use GitHub Projects/issues to track milestones (auth features, inventory modules, deployment steps, etc.).
-
-With these housekeeping pieces in place, the repo is ready for collaboration, CI, and deployment automation.
