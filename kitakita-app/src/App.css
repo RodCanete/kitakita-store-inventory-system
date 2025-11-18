@@ -240,10 +240,19 @@
   padding: 0;
 }
 
+.status-box h3 {
+  margin-top: 0;
+  color: #0b63e8;
+}
+
+.status-box p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
 @media (max-width: 900px) {
   .auth-page { flex-direction: column; }
   .auth-left, .auth-right { flex: none; width: 100%; }
   .brand-logo { width: 160px; }
   .form-card { width: 92%; margin: 24px auto; padding: 22px; }
 }
-

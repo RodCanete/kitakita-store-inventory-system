@@ -3,8 +3,17 @@ import '../App.css';
 import logo from '../images/app_logo.png';
 
 export default function Login({onSwitchToSignup, onAuthSuccess}) {
-  const [email, setEmail] = React.useState('');
+  const [email, setEmail] = React.useState(() => {
+    // Load saved email if "Remember me" was checked
+    const savedEmail = localStorage.getItem('kitakita_remembered_email');
+    const rememberMe = localStorage.getItem('kitakita_remember_me') === 'true';
+    return rememberMe && savedEmail ? savedEmail : '';
+  });
   const [password, setPassword] = React.useState('');
+  const [rememberMe, setRememberMe] = React.useState(() => {
+    // Load "Remember me" preference
+    return localStorage.getItem('kitakita_remember_me') === 'true';
+  });
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -33,6 +42,17 @@ export default function Login({onSwitchToSignup, onAuthSuccess}) {
 
       if (!res.ok) throw new Error(payload?.error || payload?.message || 'Login failed');
       // payload expected: { token, user }
+      
+      // Save email if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem('kitakita_remembered_email', email);
+        localStorage.setItem('kitakita_remember_me', 'true');
+      } else {
+        // Clear saved email if "Remember me" is unchecked
+        localStorage.removeItem('kitakita_remembered_email');
+        localStorage.setItem('kitakita_remember_me', 'false');
+      }
+      
       if (onAuthSuccess) onAuthSuccess(payload.token, payload.user);
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -68,7 +88,11 @@ export default function Login({onSwitchToSignup, onAuthSuccess}) {
 
             <div className="form-row">
               <label className="checkbox">
-                <input type="checkbox" /> Remember for 30 days
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                /> Remember me
               </label>
               <button type="button" className="link-button small-link">Forgot password</button>
             </div>
