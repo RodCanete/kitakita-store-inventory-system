@@ -167,19 +167,18 @@ function App() {
       )}
 
       {mode === 'dashboard' && user && (
-        <Layout 
-          currentPage={currentPage} 
-          onNavigate={handleNavigate} 
-          onLogout={handleLogout}
-          user={user}
-        >
-          {renderPage()}
-        </Layout>
-      )}
-      
-      {/* Fallback: if somehow in dashboard mode without user, show login */}
-      {mode === 'dashboard' && !user && (
-        <Login onSwitchToSignup={() => setMode('signup')} onAuthSuccess={handleAuthSuccess} />
+        <main style={{padding:40}}>
+          <div style={{maxWidth:900, margin:'0 auto'}}>
+            <h2>Welcome to Kita Kita Inventory System, {user.fullName || user.email}!</h2>
+            <p>Your email: {user.email}</p>
+            <div className="status-box">
+              <h3>System Status</h3>
+              <p>✅ You're successfully logged in to the inventory management system.</p>
+              <p>✅ Ready to manage your store inventory.</p>
+            </div>
+            <button className="btn-primary" onClick={handleLogout} style={{marginTop: '20px'}}>Log out</button>
+          </div>
+        </main>
       )}
     </div>
   );
