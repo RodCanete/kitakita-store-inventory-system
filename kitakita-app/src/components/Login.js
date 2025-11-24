@@ -45,7 +45,7 @@ export default function Login({onSwitchToSignup, onAuthSuccess}) {
       }
 
       if (!res.ok) throw new Error(payload?.error || payload?.message || 'Login failed');
-      // payload expected: { token, user }
+      // payload structure: { token, userId, email, fullName, role, createdAt, lastLogin }
       
       // Save email if "Remember me" is checked
       if (rememberMe) {
@@ -57,7 +57,18 @@ export default function Login({onSwitchToSignup, onAuthSuccess}) {
         localStorage.setItem('kitakita_remember_me', 'false');
       }
       
-      if (onAuthSuccess) onAuthSuccess(payload.token, payload.user);
+      // Construct user object from payload
+      const userObj = {
+        id: payload.userId,
+        userId: payload.userId,
+        email: payload.email,
+        fullName: payload.fullName,
+        role: payload.role,
+        createdAt: payload.createdAt,
+        lastLogin: payload.lastLogin
+      };
+      
+      if (onAuthSuccess) onAuthSuccess(payload.token, userObj);
     } catch (err) {
       console.error('Login error:', err);
       
