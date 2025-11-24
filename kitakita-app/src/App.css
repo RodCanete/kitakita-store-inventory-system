@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 .App {
   text-align: center;
 }
@@ -400,6 +404,9 @@
   margin-left: 260px;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  width: calc(100% - 260px);
+  box-sizing: border-box;
 }
 
 .top-bar {
@@ -476,12 +483,17 @@
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Dashboard Styles */
 .dashboard {
-  max-width: 1400px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .page-title {
@@ -496,6 +508,8 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .summary-card {
@@ -504,6 +518,9 @@
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .summary-card-title {
@@ -553,18 +570,21 @@
 
 .summary-metric-content {
   flex: 1;
+  text-align: left;
 }
 
 .summary-metric-label {
   font-size: 13px;
   color: #64748b;
   margin-bottom: 4px;
+  text-align: left;
 }
 
 .summary-metric-value {
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
+  text-align: left;
 }
 
 .charts-row {
@@ -572,6 +592,8 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
   margin-bottom: 24px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chart-card {
@@ -580,6 +602,9 @@
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .chart-header {
@@ -610,12 +635,21 @@
 .chart-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
+}
+
+.chart-wrapper svg {
+  max-width: 100%;
+  height: auto;
 }
 
 .tables-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .table-card {
@@ -624,6 +658,9 @@
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .table-header {
@@ -643,6 +680,8 @@
 .data-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
+  min-width: 0;
 }
 
 .data-table thead {
@@ -656,6 +695,7 @@
   font-weight: 600;
   color: #64748b;
   border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
 }
 
 .data-table td {
@@ -663,6 +703,9 @@
   font-size: 14px;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: left;
 }
 
 .data-table tbody tr:hover {
@@ -740,12 +783,14 @@
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  text-align: left;
 }
 
 .inventory-metric-label {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 8px;
+  text-align: left;
 }
 
 .inventory-metric-label.blue {
@@ -769,6 +814,7 @@
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 4px;
+  text-align: left;
 }
 
 .inventory-metric-value-small {
@@ -776,11 +822,13 @@
   font-weight: 700;
   color: #1e293b;
   margin-top: 8px;
+  text-align: left;
 }
 
 .inventory-metric-subtext {
   font-size: 12px;
   color: #64748b;
+  text-align: left;
 }
 
 .inventory-metric-secondary {
@@ -788,11 +836,13 @@
   font-weight: 600;
   color: #1e293b;
   margin-top: 8px;
+  text-align: left;
 }
 
 .inventory-metric-secondary-label {
   font-size: 12px;
   color: #64748b;
+  text-align: left;
 }
 
 .products-section {
@@ -850,6 +900,7 @@
   font-size: 14px;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
+  text-align: left;
 }
 
 .products-table tbody tr:hover {
@@ -1080,6 +1131,7 @@
   font-size: 14px;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
+  text-align: left;
 }
 
 .sales-table tbody tr:hover {
@@ -1125,18 +1177,21 @@
   padding: 16px;
   background: #f9fafb;
   border-radius: 8px;
+  text-align: left;
 }
 
 .overview-metric-label {
   font-size: 12px;
   color: #64748b;
   margin-bottom: 8px;
+  text-align: left;
 }
 
 .overview-metric-value {
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
+  text-align: left;
 }
 
 .section-header {
@@ -1165,6 +1220,7 @@
   font-size: 14px;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
+  text-align: left;
 }
 
 .increase-positive {
@@ -1337,6 +1393,7 @@
   
   .main-content {
     margin-left: 200px;
+    width: calc(100% - 200px);
   }
   
   .overall-inventory {

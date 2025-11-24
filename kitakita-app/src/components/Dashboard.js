@@ -38,8 +38,11 @@ export default function Dashboard() {
     const updateChartWidth = () => {
       const card = document.querySelector('.chart-card');
       if (card) {
-        const width = Math.max(card.offsetWidth - 48, 400); // Min 400px width
-        setChartWidth(Math.min(width, 600));
+        // Get the actual available width minus padding (24px on each side = 48px total)
+        const availableWidth = card.offsetWidth - 48;
+        // Use the full available width, with a minimum of 300px
+        const width = Math.max(availableWidth, 300);
+        setChartWidth(width);
       }
     };
 
