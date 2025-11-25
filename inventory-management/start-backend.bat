@@ -6,7 +6,7 @@ echo.
 
 REM Set Database Configuration
 REM Update these values to match your MySQL setup
-set SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/kitakita_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+set SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/kitakita_db?createDatabaseIfNotExist=true^&useSSL=false^&serverTimezone=UTC
 set SPRING_DATASOURCE_USERNAME=root
 set SPRING_DATASOURCE_PASSWORD=FuSz5590
 
