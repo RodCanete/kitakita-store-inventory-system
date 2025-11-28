@@ -1,29 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
-const salesData = [
-  { product: 'Maggi', saleValue: 4306, quantity: '43 Packets', saleId: 7535, date: '11/12/22' },
-  { product: 'Bru', saleValue: 2557, quantity: '22 Packets', saleId: 5724, date: '21/12/22' },
-  { product: 'Red Bull', saleValue: 4075, quantity: '36 Packets', saleId: 2775, date: '5/12/22' },
-  { product: 'Bourn Vita', saleValue: 5052, quantity: '14 Packets', saleId: 2275, date: '8/12/22' },
-  { product: 'Horlicks', saleValue: 5370, quantity: '5 Packets', saleId: 2427, date: '9/1/23' },
-  { product: 'Harpic', saleValue: 6065, quantity: '10 Packets', saleId: 2578, date: '9/1/23' },
-  { product: 'Ariel', saleValue: 4078, quantity: '23 Packets', saleId: 2757, date: '15/12/23' },
-  { product: 'Scotch Brite', saleValue: 3559, quantity: '43 Packets', saleId: 3757, date: '6/6/23' },
-  { product: 'Coca cola', saleValue: 2055, quantity: '41 Packets', saleId: 2474, date: '11/11/22' },
-];
-
 export default function Sales() {
+  const [sales, setSales] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     product: '',
     quantity: '',
-    saleValue: '',
-    date: ''
+    unitPrice: ''
   });
+
+  // Get token from localStorage (assuming it's stored there after login)
+  const token = localStorage.getItem('kitakita_token');
+  
+  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  useEffect(() => {
+    fetchSales();
+    fetchProducts();
+  }, []);
+
+  const fetchSales = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching sales with token:', token);
+      
+      // Add authorization header if token is available
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      console.log('Making request to:', `${apiBase}/api/sales`);
+      console.log('Headers:', headers);
+      
+      const response = await fetch(`${apiBase}/api/sales`, {
+        headers: headers
+      });
+      
+      console.log('Sales response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Sales fetch error response:', errorText);
+        throw new Error(`Failed to fetch sales: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Sales data received:', data);
+      setSales(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching sales:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const fetchProducts = async () => {
+    try {
+      console.log('Fetching products with token:', token);
+      
+      // Add authorization header if token is available
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      console.log('Making request to:', `${apiBase}/api/products`);
+      console.log('Headers:', headers);
+      
+      const response = await fetch(`${apiBase}/api/products`, {
+        headers: headers
+      });
+      
+      console.log('Products response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Products fetch error response:', errorText);
+        throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Products data received:', data);
+      setProducts(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError(err.message);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // If product is selected, automatically set the unit price
+    if (name === 'product' && value) {
+      const selectedProduct = products.find(p => p.productId === parseInt(value));
+      if (selectedProduct) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          unitPrice: selectedProduct.sellingPrice || selectedProduct.buyingPrice || 0
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -34,18 +128,93 @@ export default function Sales() {
     setFormData({
       product: '',
       quantity: '',
-      saleValue: '',
-      date: ''
+      unitPrice: ''
     });
     setShowModal(false);
   };
 
-  const handleAddSale = (e) => {
+  const handleAddSale = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Adding sale:', formData);
-    handleDiscard();
+    
+    // Check if user is authenticated
+    if (!token) {
+      setError('You must be logged in to add sales');
+      return;
+    }
+    
+    try {
+      // Validate form data
+      if (!formData.product || !formData.quantity) {
+        throw new Error('Please fill in all required fields');
+      }
+      
+      // Log the form data for debugging
+      console.log('Form data before sale creation:', formData);
+      
+      // Find the selected product
+      const selectedProduct = products.find(p => p.productId === parseInt(formData.product));
+      console.log('Selected product:', selectedProduct);
+      
+      if (!selectedProduct) {
+        throw new Error('Selected product not found');
+      }
+      
+      const quantity = parseInt(formData.quantity);
+      const unitPrice = parseFloat(formData.unitPrice || selectedProduct.sellingPrice || selectedProduct.buyingPrice || 0);
+      const totalValue = quantity * unitPrice;
+      
+      // Get buying price from the selected product
+      const buyingPrice = selectedProduct ? parseFloat(selectedProduct.buyingPrice) : 0;
+      
+      const saleData = {
+        saleCode: `SALE-${Date.now()}`, // Generate a unique sale code
+        productId: parseInt(formData.product), // Send productId directly instead of nested object
+        quantity: quantity,
+        unitPrice: unitPrice,
+        totalValue: totalValue,
+        buyingPrice: buyingPrice,
+        notes: ''
+      };
+      
+      // Log the sale data being sent
+      console.log('Sending sale data:', saleData);
+      
+      const response = await fetch(`${apiBase}/api/sales`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(saleData)
+      });
+      
+      console.log('Sale response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Sale error response:', errorText);
+        throw new Error(`Failed to add sale: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const newSale = await response.json();
+      console.log('Sale added successfully:', newSale);
+      
+      // Refresh the sales list
+      await fetchSales();
+      
+      // Refresh the products list to show updated inventory quantities
+      await fetchProducts();
+      
+      // Reset form and close modal
+      handleDiscard();
+    } catch (error) {
+      console.error('Error adding sale:', error);
+      setError(error.message);
+    }
   };
+
+  // Get the selected product for display purposes
+  const selectedProduct = products.find(p => p.productId === parseInt(formData.product));
 
   return (
     <div className="sales">
@@ -53,6 +222,10 @@ export default function Sales() {
         <h1 className="page-title">Sales</h1>
         <div className="sales-actions">
           <button className="btn-primary" onClick={() => setShowModal(true)}>Add Sale</button>
+          <button className="btn-secondary" onClick={fetchSales}>
+            <span style={{ marginRight: '8px' }}>🔄</span>
+            Refresh
+          </button>
           <button className="btn-secondary">
             <span style={{ marginRight: '8px' }}>🔍</span>
             Filters
@@ -60,6 +233,20 @@ export default function Sales() {
           <button className="btn-secondary">Order History</button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          Error: {error}
+        </div>
+      )}
+
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="loading-message">
+          Loading sales...
+        </div>
+      )}
 
       <div className="sales-table-container">
         <table className="sales-table">
@@ -73,13 +260,13 @@ export default function Sales() {
             </tr>
           </thead>
           <tbody>
-            {salesData.map((sale, idx) => (
+            {sales.map((sale, idx) => (
               <tr key={idx}>
-                <td>{sale.product}</td>
-                <td>P{sale.saleValue.toLocaleString()}</td>
-                <td>{sale.quantity}</td>
-                <td>{sale.saleId}</td>
-                <td>{sale.date}</td>
+                <td>{sale.product?.productName || 'N/A'}</td>
+                <td>₱{sale.totalValue?.toFixed(2) || '0.00'}</td>
+                <td>{sale.quantity} {sale.product?.unit || ''}</td>
+                <td>{sale.saleId || 'N/A'}</td>
+                <td>{sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : 'N/A'}</td>
               </tr>
             ))}
           </tbody>
@@ -99,29 +286,25 @@ export default function Sales() {
             <h2 className="modal-title">Add Sale</h2>
             
             <form onSubmit={handleAddSale} className="product-form">
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Product</label>
-                  <select
-                    name="product"
-                    className="form-input"
-                    value={formData.product}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select product</option>
-                    <option value="Maggi">Maggi</option>
-                    <option value="Bru">Bru</option>
-                    <option value="Red Bull">Red Bull</option>
-                    <option value="Bourn Vita">Bourn Vita</option>
-                    <option value="Horlicks">Horlicks</option>
-                    <option value="Harpic">Harpic</option>
-                    <option value="Ariel">Ariel</option>
-                    <option value="Scotch Brite">Scotch Brite</option>
-                    <option value="Coca cola">Coca cola</option>
-                  </select>
-                </div>
+              <div className="form-field">
+                <label className="form-label">Product</label>
+                <select
+                  name="product"
+                  className="form-input"
+                  value={formData.product}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">Select product</option>
+                  {products.map(product => (
+                    <option key={product.productId} value={product.productId}>
+                      {product.productName}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
+              <div className="form-row-2">
                 <div className="form-field">
                   <label className="form-label">Quantity</label>
                   <input
@@ -134,34 +317,38 @@ export default function Sales() {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="form-row-2">
                 <div className="form-field">
-                  <label className="form-label">Sale Value</label>
+                  <label className="form-label">Unit Price</label>
                   <input
                     type="number"
-                    name="saleValue"
+                    step="0.01"
+                    name="unitPrice"
                     className="form-input"
-                    placeholder="Enter sale value"
-                    value={formData.saleValue}
+                    placeholder="Unit price"
+                    value={formData.unitPrice}
                     onChange={handleInputChange}
                     required
                   />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    className="form-input"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  {selectedProduct && (
+                    <div className="form-helper-text">
+                      Default price: ₱{selectedProduct.sellingPrice || selectedProduct.buyingPrice || 0}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {selectedProduct && (
+                <div className="form-field">
+                  <label className="form-label">Total Value</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={`₱${(parseFloat(formData.quantity || 0) * parseFloat(formData.unitPrice || 0)).toFixed(2)}`}
+                    readOnly
+                  />
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="modal-actions">
@@ -179,4 +366,3 @@ export default function Sales() {
     </div>
   );
 }
-

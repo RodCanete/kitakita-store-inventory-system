@@ -1,23 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
-const suppliersData = [
-  { id: 1, name: 'ABC Food Distributors', contact: '09123456789', email: 'abc@example.com', address: '123 Main St, City', products: 25, status: 'Active' },
-  { id: 2, name: 'XYZ Beverage Co.', contact: '09987654321', email: 'xyz@example.com', address: '456 Market St, City', products: 18, status: 'Active' },
-  { id: 3, name: 'Global Snacks Ltd.', contact: '09555555555', email: 'global@example.com', address: '789 Business Ave, City', products: 32, status: 'Inactive' },
-  { id: 4, name: 'Fresh Produce Inc.', contact: '09111111111', email: 'fresh@example.com', address: '321 Farm Road, City', products: 15, status: 'Active' },
-  { id: 5, name: 'Dairy Delights Co.', contact: '09222222222', email: 'dairy@example.com', address: '654 Dairy Lane, City', products: 12, status: 'Active' },
-];
-
 export default function Suppliers() {
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    contact: '',
+    supplierName: '',
+    contactNumber: '',
     email: '',
     address: ''
   });
+
+  // Get token from localStorage (assuming it's stored there after login)
+  const token = localStorage.getItem('kitakita_token');
+  
+  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      // Add authorization header if token is available
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${apiBase}/api/suppliers`, {
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch suppliers');
+      }
+      const data = await response.json();
+      setSuppliers(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching suppliers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -29,8 +63,8 @@ export default function Suppliers() {
 
   const handleDiscard = () => {
     setFormData({
-      name: '',
-      contact: '',
+      supplierName: '',
+      contactNumber: '',
       email: '',
       address: ''
     });
@@ -38,18 +72,56 @@ export default function Suppliers() {
     setShowModal(false);
   };
 
-  const handleAddSupplier = (e) => {
+  const handleAddSupplier = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Adding supplier:', formData);
-    // Reset form and close modal
-    handleDiscard();
+    
+    // Check if user is authenticated
+    if (!token) {
+      setError('You must be logged in to add suppliers');
+      return;
+    }
+    
+    try {
+      const supplierData = {
+        supplierName: formData.supplierName,
+        contactNumber: formData.contactNumber,
+        email: formData.email,
+        address: formData.address,
+        isActive: true
+      };
+      
+      const response = await fetch(`${apiBase}/api/suppliers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(supplierData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to add supplier: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const newSupplier = await response.json();
+      console.log('Supplier added successfully:', newSupplier);
+      
+      // Refresh the supplier list
+      await fetchSuppliers();
+      
+      // Reset form and close modal
+      handleDiscard();
+    } catch (error) {
+      console.error('Error adding supplier:', error);
+      setError(error.message);
+    }
   };
 
   const handleEditSupplier = (supplier) => {
     setFormData({
-      name: supplier.name,
-      contact: supplier.contact,
+      supplierName: supplier.supplierName,
+      contactNumber: supplier.contactNumber,
       email: supplier.email,
       address: supplier.address
     });
@@ -57,17 +129,55 @@ export default function Suppliers() {
     setShowModal(true);
   };
 
-  const handleUpdateSupplier = (e) => {
+  const handleUpdateSupplier = async (e) => {
     e.preventDefault();
-    // Here you would typically send the updated data to your backend
-    console.log('Updating supplier:', selectedSupplier.id, formData);
-    // Reset form and close modal
-    handleDiscard();
+    
+    // Check if user is authenticated
+    if (!token) {
+      setError('You must be logged in to update suppliers');
+      return;
+    }
+    
+    try {
+      const supplierData = {
+        supplierName: formData.supplierName,
+        contactNumber: formData.contactNumber,
+        email: formData.email,
+        address: formData.address,
+        isActive: selectedSupplier.isActive
+      };
+      
+      const response = await fetch(`${apiBase}/api/suppliers/${selectedSupplier.supplierId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(supplierData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update supplier: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const updatedSupplier = await response.json();
+      console.log('Supplier updated successfully:', updatedSupplier);
+      
+      // Refresh the supplier list
+      await fetchSuppliers();
+      
+      // Reset form and close modal
+      handleDiscard();
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      setError(error.message);
+    }
   };
 
   const getStatusClass = (status) => {
-    if (status === 'Active') return 'status-active';
-    if (status === 'Inactive') return 'status-inactive';
+    if (status === true) return 'status-active';
+    if (status === false) return 'status-inactive';
     return '';
   };
 
@@ -82,6 +192,20 @@ export default function Suppliers() {
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          Error: {error}
+        </div>
+      )}
+
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="loading-message">
+          Loading suppliers...
+        </div>
+      )}
+
       {/* Suppliers Table */}
       <div className="suppliers-table-container">
         <table className="suppliers-table">
@@ -91,22 +215,20 @@ export default function Suppliers() {
               <th>Contact</th>
               <th>Email</th>
               <th>Address</th>
-              <th>Products</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {suppliersData.map((supplier) => (
-              <tr key={supplier.id}>
-                <td>{supplier.name}</td>
-                <td>{supplier.contact}</td>
+            {suppliers.map((supplier) => (
+              <tr key={supplier.supplierId}>
+                <td>{supplier.supplierName}</td>
+                <td>{supplier.contactNumber}</td>
                 <td>{supplier.email}</td>
                 <td>{supplier.address}</td>
-                <td>{supplier.products}</td>
                 <td>
-                  <span className={`status-badge ${getStatusClass(supplier.status)}`}>
-                    {supplier.status}
+                  <span className={`status-badge ${getStatusClass(supplier.isActive)}`}>
+                    {supplier.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
                 <td>
@@ -140,10 +262,10 @@ export default function Suppliers() {
                 <label className="form-label">Supplier Name</label>
                 <input
                   type="text"
-                  name="name"
+                  name="supplierName"
                   className="form-input"
                   placeholder="Enter supplier name"
-                  value={formData.name}
+                  value={formData.supplierName}
                   onChange={handleInputChange}
                   required
                 />
@@ -154,10 +276,10 @@ export default function Suppliers() {
                   <label className="form-label">Contact Number</label>
                   <input
                     type="text"
-                    name="contact"
+                    name="contactNumber"
                     className="form-input"
                     placeholder="Enter contact number"
-                    value={formData.contact}
+                    value={formData.contactNumber}
                     onChange={handleInputChange}
                     required
                   />

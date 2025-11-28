@@ -1,5 +1,8 @@
 package com.kitakita.inventory.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -15,6 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Product {
     
     @Id
@@ -29,11 +33,13 @@ public class Product {
     private String productCode;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "category_id")
+    @JsonIgnore
     private Category category;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
+    @JsonIgnore
     private Supplier supplier;
     
     @Column(name = "buying_price", nullable = false, precision = 10, scale = 2)
@@ -73,4 +79,17 @@ public class Product {
     
     @Column(name = "is_active")
     private Boolean isActive = true;
+    
+    // Add user ID field to associate products with users
+    @Column(name = "user_id")
+    private Integer userId;
+    
+    // Transient fields for deserialization
+    @JsonProperty("categoryId")
+    @Transient
+    private Integer categoryId;
+    
+    @JsonProperty("supplierId")
+    @Transient
+    private Integer supplierId;
 }

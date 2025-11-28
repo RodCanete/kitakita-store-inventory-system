@@ -1,0 +1,14 @@
+{
+  "name": "kitakita-inventory-test",
+  "version": "1.0.0",
+  "description": "Test script for Kita Kita Inventory System API",
+  "main": "test-api.js",
+  "scripts": {
+    "test-api": "node test-api.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "author": "Kita Kita Development Team",
+  "license": "MIT"
+}

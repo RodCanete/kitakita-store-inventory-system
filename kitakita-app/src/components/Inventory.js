@@ -1,31 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 import ProductDetails from './ProductDetails';
 
-const products = [
-  { name: 'Lucky Me Pancit Canton', buyingPrice: 16, quantity: 43, unit: 'Packets', threshold: 12, expiryDate: '11/12/25', availability: 'In-stock' },
-  { name: 'Chippy (small)', buyingPrice: 10, quantity: 22, unit: 'Packets', threshold: 12, expiryDate: '21/12/25', availability: 'Out of stock' },
-  { name: 'Century Tuna (small can)', buyingPrice: 40, quantity: 36, unit: 'Packets', threshold: 9, expiryDate: '5/12/25', availability: 'In-stock' },
-  { name: '555 Sardines', buyingPrice: 22, quantity: 14, unit: 'Packets', threshold: 6, expiryDate: '8/12/25', availability: 'Out of stock' },
-  { name: 'Kopiko 3-in-1 sachet', buyingPrice: 9, quantity: 5, unit: 'Packets', threshold: 5, expiryDate: '9/1/25', availability: 'In-stock' },
-  { name: 'Nescafé 3-in-1 sachet', buyingPrice: 11, quantity: 10, unit: 'Packets', threshold: 5, expiryDate: '9/1/25', availability: 'In-stock' },
-  { name: 'Milo sachet', buyingPrice: 11, quantity: 23, unit: 'Packets', threshold: 7, expiryDate: '15/12/25', availability: 'Out of stock' },
-  { name: 'Scotch Brite', buyingPrice: 20, quantity: 43, unit: 'Packets', threshold: 8, expiryDate: '6/6/25', availability: 'In-stock' },
-  { name: 'Coca cola (1.5L)', buyingPrice: 90, quantity: 41, unit: 'Bottles', threshold: 10, expiryDate: '11/11/25', availability: 'Low stock' },
-];
-
 export default function Inventory() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [formData, setFormData] = useState({
     productName: '',
-    productId: '',
+    productCode: '',
     category: '',
     buyingPrice: '',
     quantity: '',
     unit: '',
     expiryDate: ''
   });
+
+  // Get token from localStorage (assuming it's stored there after login)
+  const token = localStorage.getItem('kitakita_token');
+
+  const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  useEffect(() => {
+    fetchProducts();
+  }, [token]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      // Add authorization header if token is available
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${apiBase}/api/products`, {
+        headers: headers
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      }
+      const data = await response.json();
+      // Transform backend data to match frontend structure
+      const transformedProducts = data.map(product => ({
+        id: product.productId,
+        name: product.productName,
+        productCode: product.productCode,
+        buyingPrice: product.buyingPrice,
+        quantity: product.quantity,
+        unit: product.unit,
+        threshold: product.thresholdValue,
+        expiryDate: product.expiryDate,
+        availability: product.isActive ? 'In-stock' : 'Out of stock'
+      }));
+      setProducts(transformedProducts);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getAvailabilityClass = (availability) => {
     if (availability === 'Out of stock') return 'out-of-stock';
@@ -44,7 +86,7 @@ export default function Inventory() {
   const handleDiscard = () => {
     setFormData({
       productName: '',
-      productId: '',
+      productCode: '',
       category: '',
       buyingPrice: '',
       quantity: '',
@@ -54,12 +96,60 @@ export default function Inventory() {
     setShowModal(false);
   };
 
-  const handleAddProduct = (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Adding product:', formData);
-    // Reset form and close modal
-    handleDiscard();
+    
+    // Check if user is authenticated
+    if (!token) {
+      setError('You must be logged in to add products');
+      return;
+    }
+    
+    try {
+      // Transform form data to match backend Product entity
+      const productData = {
+        productName: formData.productName,
+        productCode: formData.productCode,
+        // Send just the category and supplier IDs, not objects
+        categoryId: 1, // Default category ID
+        supplierId: 1, // Default supplier ID
+        buyingPrice: parseFloat(formData.buyingPrice),
+        sellingPrice: parseFloat(formData.buyingPrice) * 1.2, // 20% markup
+        unit: formData.unit,
+        quantity: parseInt(formData.quantity),
+        thresholdValue: 10, // Default threshold
+        openingStock: parseInt(formData.quantity),
+        onTheWay: 0,
+        expiryDate: formData.expiryDate || null,
+        isActive: true
+      };
+      
+      const response = await fetch(`${apiBase}/api/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(productData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to add product: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+      
+      const newProduct = await response.json();
+      console.log('Product added successfully:', newProduct);
+      
+      // Refresh the product list
+      await fetchProducts();
+      
+      // Reset form and close modal
+      handleDiscard();
+    } catch (error) {
+      console.error('Error adding product:', error);
+      setError(error.message);
+    }
   };
 
   return (
@@ -166,35 +256,33 @@ export default function Inventory() {
 
             {/* Form Fields */}
             <form onSubmit={handleAddProduct} className="product-form">
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Product Name</label>
-                  <input
-                    type="text"
-                    name="productName"
-                    className="form-input"
-                    placeholder="Enter product name"
-                    value={formData.productName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Product ID</label>
-                  <input
-                    type="text"
-                    name="productId"
-                    className="form-input"
-                    placeholder="Enter product ID"
-                    value={formData.productId}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+              <div className="form-field">
+                <label className="form-label">Product Name</label>
+                <input
+                  type="text"
+                  name="productName"
+                  className="form-input"
+                  placeholder="Enter product name"
+                  value={formData.productName}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
 
               <div className="form-row-2">
+                <div className="form-field">
+                  <label className="form-label">Product Code</label>
+                  <input
+                    type="text"
+                    name="productCode"
+                    className="form-input"
+                    placeholder="Enter product code"
+                    value={formData.productCode}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
                 <div className="form-field">
                   <label className="form-label">Category</label>
                   <select
@@ -212,7 +300,9 @@ export default function Inventory() {
                     <option value="Beverages">Beverages</option>
                   </select>
                 </div>
+              </div>
 
+              <div className="form-row-2">
                 <div className="form-field">
                   <label className="form-label">Buying Price</label>
                   <input
@@ -225,9 +315,7 @@ export default function Inventory() {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="form-row-2">
                 <div className="form-field">
                   <label className="form-label">Quantity</label>
                   <input
@@ -240,7 +328,9 @@ export default function Inventory() {
                     required
                   />
                 </div>
+              </div>
 
+              <div className="form-row-2">
                 <div className="form-field">
                   <label className="form-label">Unit</label>
                   <input
@@ -253,19 +343,18 @@ export default function Inventory() {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="form-field">
-                <label className="form-label">Expiry Date</label>
-                <input
-                  type="date"
-                  name="expiryDate"
-                  className="form-input"
-                  placeholder="Enter expiry date"
-                  value={formData.expiryDate}
-                  onChange={handleInputChange}
-                  required
-                />
+                <div className="form-field">
+                  <label className="form-label">Expiry Date</label>
+                  <input
+                    type="date"
+                    name="expiryDate"
+                    className="form-input"
+                    value={formData.expiryDate}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
 
               {/* Action Buttons */}
