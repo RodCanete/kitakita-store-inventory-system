@@ -1,6 +1,7 @@
 import React from 'react';
 import '../App.css';
 import logo from '../images/app_logo.png';
+import googleIcon from '../images/google_icon.png';
 
 export default function Signup({onSwitchToLogin, onAuthSuccess}) {
   const [name, setName] = React.useState('');
@@ -41,8 +42,6 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
         throw new Error(errorMessage);
       }
 
-      // Backend returns AuthResponse with token and user data
-      // Map the response to match what App.js expects
       const user = {
         id: payload.userId,
         userId: payload.userId,
@@ -76,7 +75,7 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
       <div className="auth-left">
         <div className="brand-wrap">
           <img src={logo} alt="Kita Kita" className="brand-logo" />
-          <h1 className="brand-title">KITA KITA</h1>
+    
         </div>
       </div>
 
@@ -109,7 +108,7 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
             <div className="divider"><span>or</span></div>
 
             <button type="button" className="btn-google">
-              <span className="g-icon" aria-hidden>G</span>
+              <img src={googleIcon} alt="Google" className="g-icon" />
               Sign up with Google
             </button>
           </form>

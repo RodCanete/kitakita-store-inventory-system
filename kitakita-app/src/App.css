@@ -265,16 +265,11 @@
 }
 
 .g-icon {
-  background: #fff;
-  border-radius: 50%;
   width: 22px;
   height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #d93025;
-  font-weight: 700;
-  font-size: 13px;
+  display: inline-block;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .footer-text {

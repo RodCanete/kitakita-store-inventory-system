@@ -1,6 +1,7 @@
 import React from 'react';
 import '../App.css';
 import logo from '../images/app_logo.png';
+import googleIcon from '../images/google_icon.png';
 
 export default function Login({onSwitchToSignup, onAuthSuccess}) {
   const [email, setEmail] = React.useState(() => {
@@ -129,7 +130,7 @@ export default function Login({onSwitchToSignup, onAuthSuccess}) {
             <div className="divider"><span>or</span></div>
 
             <button type="button" className="btn-google">
-              <span className="g-icon" aria-hidden>G</span>
+              <img src={googleIcon} alt="Google" className="g-icon" />
               Sign in with Google
             </button>
           </form>
