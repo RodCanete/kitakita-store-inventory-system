@@ -10,7 +10,6 @@ import Sales from './components/Sales';
 import Suppliers from './components/Suppliers';
 
 function App() {
-  // Always start at login page regardless of stored token
   const [mode, setMode] = useState('login');
   const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard', 'inventory', etc.
   const [token, setToken] = useState(null);
@@ -19,9 +18,21 @@ function App() {
   const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
-    // Simplified useEffect - only check if we should show login or dashboard
+    const savedToken = localStorage.getItem('kitakita_token');
+    const savedUser = localStorage.getItem('kitakita_user');
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      try {
+        setUser(JSON.parse(savedUser));
+        setMode('dashboard');
+      } catch {
+        localStorage.removeItem('kitakita_user');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (!token && !user && mode !== 'login' && mode !== 'signup') {
-      // No valid session, ensure we show login
       setMode('login');
     }
   }, [token, user, mode]);
@@ -53,21 +64,22 @@ function App() {
   };
 
   const renderPage = () => {
+    const pageProps = { token, user };
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard {...pageProps} />;
       case 'inventory':
-        return <Inventory />;
+        return <Inventory {...pageProps} />;
       case 'reports':
-        return <Reports />;
+        return <Reports {...pageProps} />;
       case 'sales':
-        return <Sales />;
+        return <Sales {...pageProps} />;
       case 'suppliers':
-        return <Suppliers />;
+        return <Suppliers {...pageProps} />;
       case 'settings':
         return <div className="coming-soon">Coming Soon: {currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</div>;
       default:
-        return <Dashboard />;
+        return <Dashboard {...pageProps} />;
     }
   };
 

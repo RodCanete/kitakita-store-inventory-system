@@ -1,52 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { DashboardApi } from '../api/client';
 import '../App.css';
 
-const salesData = [
-  { month: 'Jan', Purchase: 15000, Sales: 20000 },
-  { month: 'Feb', Purchase: 18000, Sales: 22000 },
-  { month: 'Mar', Purchase: 22000, Sales: 28000 },
-  { month: 'Apr', Purchase: 25000, Sales: 32000 },
-  { month: 'May', Purchase: 28000, Sales: 38000 },
-  { month: 'Jun', Purchase: 30000, Sales: 42000 },
-];
+const formatNumber = (value) => {
+  if (value === undefined || value === null) return '-';
+  return value.toLocaleString();
+};
 
-const orderData = [
-  { month: 'Jan', Ordered: 1200, Delivered: 1100 },
-  { month: 'Feb', Ordered: 1500, Delivered: 1400 },
-  { month: 'Mar', Ordered: 1800, Delivered: 1700 },
-  { month: 'Apr', Ordered: 2200, Delivered: 2100 },
-  { month: 'May', Ordered: 2500, Delivered: 2400 },
-];
+const formatCurrency = (value) => {
+  if (!value && value !== 0) return '₱0';
+  return `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
-const topSellingStock = [
-  { name: 'Surf Fabcon', soldQuantity: 30, remainingQuantity: 12, price: 75 },
-  { name: 'Red Horse', soldQuantity: 21, remainingQuantity: 15, price: 55 },
-  { name: 'Perla Bar White', soldQuantity: 19, remainingQuantity: 17, price: 55 },
-];
-
-const lowQuantityStock = [
-  { name: 'Piattos', quantity: 10, unit: 'Packet' },
-  { name: 'Moby (Caramel)', quantity: 15, unit: 'Packet' },
-  { name: 'Moby (Chocolate)', quantity: 15, unit: 'Packet' },
-];
-
-export default function Dashboard() {
+export default function Dashboard({ token }) {
   const [chartWidth, setChartWidth] = useState(600);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const updateChartWidth = () => {
       const card = document.querySelector('.chart-card');
       if (card) {
-        // Get the actual available width minus padding (24px on each side = 48px total)
         const availableWidth = card.offsetWidth - 48;
-        // Use the full available width, with a minimum of 300px
         const width = Math.max(availableWidth, 300);
         setChartWidth(width);
       }
     };
 
-    // Use setTimeout to ensure DOM is ready
     const timer = setTimeout(updateChartWidth, 100);
     window.addEventListener('resize', updateChartWidth);
     return () => {
@@ -55,188 +37,173 @@ export default function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+    let isMounted = true;
+
+    const loadSummary = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await DashboardApi.summary(token);
+        if (isMounted) {
+          setSummary(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadSummary();
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  const summaryCards = summary?.summaryCards;
+  const inventoryByCategory = summary?.inventoryByCategory ?? [];
+  const stockMovement = summary?.stockMovement ?? [];
+  const topSellingStock = summary?.topSellingStock ?? [];
+  const lowQuantityStock = summary?.lowQuantityStock ?? [];
+
   return (
     <div className="dashboard">
       <h1 className="page-title">Dashboard</h1>
+      {loading && <div className="info-banner">Loading latest inventory insights…</div>}
+      {error && <div className="form-error" role="alert">{error}</div>}
 
-      {/* Summary Cards - 2x2 Grid */}
       <div className="summary-cards-grid">
-        {/* Sales Overview */}
         <div className="summary-card">
-          <h3 className="summary-card-title">Sales Overview</h3>
+          <h3 className="summary-card-title">Inventory Overview</h3>
           <div className="summary-metrics">
             <div className="summary-metric">
-              <div className="summary-metric-icon blue">📊</div>
+              <div className="summary-metric-icon blue">📦</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Sales</div>
-                <div className="summary-metric-value">P 832</div>
+                <div className="summary-metric-label">Total Products</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.totalProducts)}</div>
               </div>
             </div>
             <div className="summary-metric">
-              <div className="summary-metric-icon purple">📈</div>
+              <div className="summary-metric-icon purple">💰</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Revenue</div>
-                <div className="summary-metric-value">P 18,300</div>
+                <div className="summary-metric-label">Inventory Value</div>
+                <div className="summary-metric-value">{formatCurrency(summaryCards?.inventoryValue)}</div>
               </div>
             </div>
             <div className="summary-metric">
-              <div className="summary-metric-icon orange">📊</div>
+              <div className="summary-metric-icon orange">🚨</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Profit</div>
-                <div className="summary-metric-value">P 868</div>
+                <div className="summary-metric-label">Low Stock Items</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.lowStockCount)}</div>
               </div>
             </div>
             <div className="summary-metric">
-              <div className="summary-metric-icon green">🏠</div>
+              <div className="summary-metric-icon green">🚚</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Cost</div>
-                <div className="summary-metric-value">P 17,432</div>
+                <div className="summary-metric-label">On The Way</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.onTheWay)}</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Inventory Summary */}
         <div className="summary-card">
-          <h3 className="summary-card-title">Inventory Summary</h3>
-          <div className="summary-metrics">
-            <div className="summary-metric">
-              <div className="summary-metric-icon orange">📦</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">Quantity in Hand</div>
-                <div className="summary-metric-value">868</div>
-              </div>
-            </div>
-            <div className="summary-metric">
-              <div className="summary-metric-icon purple">📍</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">To be received</div>
-                <div className="summary-metric-value">200</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Purchase Overview */}
-        <div className="summary-card">
-          <h3 className="summary-card-title">Purchase Overview</h3>
-          <div className="summary-metrics">
-            <div className="summary-metric">
-              <div className="summary-metric-icon blue">🛍️</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">Purchase</div>
-                <div className="summary-metric-value">82</div>
-              </div>
-            </div>
-            <div className="summary-metric">
-              <div className="summary-metric-icon green">🏠</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">Cost</div>
-                <div className="summary-metric-value">P 15,000</div>
-              </div>
-            </div>
-            <div className="summary-metric">
-              <div className="summary-metric-icon purple">❌</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">Cancel</div>
-                <div className="summary-metric-value">5</div>
-              </div>
-            </div>
-            <div className="summary-metric">
-              <div className="summary-metric-icon orange">↩️</div>
-              <div className="summary-metric-content">
-                <div className="summary-metric-label">Return</div>
-                <div className="summary-metric-value">P 17,432</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Product Summary */}
-        <div className="summary-card">
-          <h3 className="summary-card-title">Product Summary</h3>
+          <h3 className="summary-card-title">Suppliers & Categories</h3>
           <div className="summary-metrics">
             <div className="summary-metric">
               <div className="summary-metric-icon blue">👥</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Number of Suppliers</div>
-                <div className="summary-metric-value">31</div>
+                <div className="summary-metric-label">Suppliers</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.totalSuppliers)}</div>
               </div>
             </div>
             <div className="summary-metric">
-              <div className="summary-metric-icon purple">📋</div>
+              <div className="summary-metric-icon purple">📂</div>
               <div className="summary-metric-content">
-                <div className="summary-metric-label">Number of Categories</div>
-                <div className="summary-metric-value">21</div>
+                <div className="summary-metric-label">Categories</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.totalCategories)}</div>
+              </div>
+            </div>
+            <div className="summary-metric">
+              <div className="summary-metric-icon orange">📦</div>
+              <div className="summary-metric-content">
+                <div className="summary-metric-label">Total Quantity</div>
+                <div className="summary-metric-value">{formatNumber(summaryCards?.totalQuantity)}</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Row */}
       <div className="charts-row">
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Sales & Purchase</h3>
-            <button className="chart-filter">Weekly</button>
+            <h3>Inventory by Category</h3>
           </div>
           <div className="chart-wrapper">
-            <BarChart width={chartWidth} height={300} data={salesData}>
+            <BarChart width={chartWidth} height={300} data={inventoryByCategory}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="Purchase" fill="#0b63e8" />
-              <Bar dataKey="Sales" fill="#10b981" />
+              <Bar dataKey="value" name="Quantity" fill="#0b63e8" />
             </BarChart>
           </div>
         </div>
 
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Order Summary</h3>
+            <h3>Stock Movement</h3>
           </div>
           <div className="chart-wrapper">
-            <LineChart width={chartWidth} height={300} data={orderData}>
+            <LineChart width={chartWidth} height={300} data={stockMovement}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
+              <XAxis dataKey="label" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="Ordered" stroke="#f97316" strokeWidth={2} />
-              <Line type="monotone" dataKey="Delivered" stroke="#0b63e8" strokeWidth={2} />
+              <Line type="monotone" dataKey="value" stroke="#0b63e8" strokeWidth={2} name="Quantity" />
             </LineChart>
           </div>
         </div>
       </div>
 
-      {/* Tables Row */}
       <div className="tables-row">
         <div className="table-card">
           <div className="table-header">
-            <h3>Top Selling Stock</h3>
-            <button className="link-button">See All</button>
+            <h3>Top Stock Positions</h3>
+            <span className="muted">{topSellingStock.length} items</span>
           </div>
           <table className="data-table">
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Sold Quantity</th>
-                <th>Remaining Quantity</th>
-                <th>Price</th>
+                <th>Quantity</th>
+                <th>Threshold</th>
+                <th>Unit</th>
               </tr>
             </thead>
             <tbody>
-              {topSellingStock.map((item, idx) => (
-                <tr key={idx}>
+              {topSellingStock.map((item) => (
+                <tr key={item.productId}>
                   <td>{item.name}</td>
-                  <td>{item.soldQuantity}</td>
-                  <td>{item.remainingQuantity}</td>
-                  <td>₱{item.price}</td>
+                  <td>{formatNumber(item.quantity)}</td>
+                  <td>{formatNumber(item.thresholdValue)}</td>
+                  <td>{item.unit || '-'}</td>
                 </tr>
               ))}
+              {!topSellingStock.length && (
+                <tr>
+                  <td colSpan={4} className="muted">No product data available yet.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -244,19 +211,24 @@ export default function Dashboard() {
         <div className="table-card">
           <div className="table-header">
             <h3>Low Quantity Stock</h3>
-            <button className="link-button">See All</button>
+            <span className="muted">{lowQuantityStock.length} alerts</span>
           </div>
           <div className="low-stock-list">
-            {lowQuantityStock.map((item, idx) => (
-              <div key={idx} className="low-stock-item">
+            {lowQuantityStock.map((item) => (
+              <div key={item.productId} className="low-stock-item">
                 <div className="low-stock-image">📦</div>
                 <div className="low-stock-info">
                   <div className="low-stock-name">{item.name}</div>
-                  <div className="low-stock-quantity">Remaining Quantity: {item.quantity} {item.unit}</div>
+                  <div className="low-stock-quantity">
+                    Remaining: {formatNumber(item.quantity)} {item.unit || ''}
+                  </div>
                 </div>
                 <span className="low-stock-badge">Low</span>
               </div>
             ))}
+            {!lowQuantityStock.length && (
+              <div className="muted">All products are above their threshold levels.</div>
+            )}
           </div>
         </div>
       </div>

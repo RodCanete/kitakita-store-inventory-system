@@ -1,30 +1,35 @@
 import React, { useState } from 'react';
 import '../App.css';
 
-export default function ProductDetails({ product, onClose }) {
-  const [activeTab, setActiveTab] = useState('overview');
+const formatDate = (value) => {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString();
+};
 
-  // Map product data from inventory to product details format
-  const productData = product ? {
-    name: product.name,
-    productId: product.productId || 456567,
-    category: product.category || 'Instant food',
-    expiryDate: product.expiryDate || '13/4/23',
-    openingStock: product.openingStock || 40,
-    remainingStock: product.quantity || 34,
-    onTheWay: product.onTheWay || 15,
-    supplierName: product.supplierName || 'Ronald Martin',
-    contactNumber: product.contactNumber || '98789 86757'
-  } : {
-    name: 'Maggi',
-    productId: 456567,
-    category: 'Instant food',
-    expiryDate: '13/4/23',
-    openingStock: 40,
-    remainingStock: 34,
-    onTheWay: 15,
-    supplierName: 'Ronald Martin',
-    contactNumber: '98789 86757'
+export default function ProductDetails({ product, onClose, onEdit }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(product);
+      onClose(); // Close the product details modal
+    }
+  };
+
+  if (!product) {
+    return null;
+  }
+
+  const productData = {
+    name: product.productName,
+    productId: product.productId,
+    category: product.categoryName || 'Uncategorized',
+    expiryDate: formatDate(product.expiryDate),
+    openingStock: product.openingStock ?? 0,
+    remainingStock: product.quantity ?? 0,
+    onTheWay: product.onTheWay ?? 0,
+    supplierName: product.supplierName || 'N/A',
+    contactNumber: product.supplierContact || 'N/A'
   };
 
   // Sample Purchases Data
@@ -64,11 +69,19 @@ export default function ProductDetails({ product, onClose }) {
         <div className="product-details-header">
           <h1 className="product-details-title">{productData.name}</h1>
           <div className="product-details-actions">
-            <button className="btn-secondary">
-              <span style={{ marginRight: '8px' }}>✏️</span>
+            <button className="btn-secondary-icon" onClick={handleEdit}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.333 2.00001C11.5084 1.82465 11.7163 1.68607 11.9447 1.59233C12.1731 1.49859 12.4173 1.45166 12.6637 1.45435C12.9101 1.45704 13.1533 1.50929 13.3788 1.60777C13.6043 1.70625 13.8075 1.84896 13.9762 2.02763C14.1449 2.2063 14.2757 2.40734 14.3615 2.62891C14.4473 2.85048 14.4863 3.08798 14.476 3.32568C14.4657 3.56338 14.4063 3.79648 14.301 4.01134C14.1957 4.2262 14.0466 4.41858 13.8613 4.57734L13.333 5.10568L10.8947 2.66734L11.333 2.00001ZM10 3.33334L12.6667 6.00001L5.33333 13.3333H2.66667V10.6667L10 3.33334Z" fill="currentColor"/>
+              </svg>
               Edit
             </button>
-            <button className="btn-secondary">Download</button>
+            <button className="btn-secondary-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 2C8.27614 2 8.5 2.22386 8.5 2.5V10.2929L11.1464 7.64645C11.3417 7.45118 11.6583 7.45118 11.8536 7.64645C12.0488 7.84171 12.0488 8.15829 11.8536 8.35355L8.35355 11.8536C8.15829 12.0488 7.84171 12.0488 7.64645 11.8536L4.14645 8.35355C3.95118 8.15829 3.95118 7.84171 4.14645 7.64645C4.34171 7.45118 4.65829 7.45118 4.85355 7.64645L7.5 10.2929V2.5C7.5 2.22386 7.72386 2 8 2Z" fill="currentColor"/>
+                <path d="M2.5 13.5C2.22386 13.5 2 13.7239 2 14C2 14.2761 2.22386 14.5 2.5 14.5H13.5C13.7761 14.5 14 14.2761 14 14C14 13.7239 13.7761 13.5 13.5 13.5H2.5Z" fill="currentColor"/>
+              </svg>
+              Download
+            </button>
           </div>
         </div>
 
@@ -128,9 +141,15 @@ export default function ProductDetails({ product, onClose }) {
 
                 {/* Product Image */}
                 <div className="product-image-section">
-                  <div className="product-image-placeholder">
-                    <div className="image-placeholder-icon">📦</div>
-                    <p>Product Image</p>
+                  <div className="product-image-container">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={productData.name} className="product-image" />
+                    ) : (
+                      <div className="product-image-placeholder">
+                        <div className="image-placeholder-icon">📦</div>
+                        <p>No Image Available</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -138,15 +157,15 @@ export default function ProductDetails({ product, onClose }) {
               {/* Stock Information */}
               <div className="stock-information">
                 <div className="stock-item">
-                  <span className="stock-label">Opening Stock:</span>
+                  <span className="stock-label">Opening Stock</span>
                   <span className="stock-value">{productData.openingStock}</span>
                 </div>
                 <div className="stock-item">
-                  <span className="stock-label">Remaining Stock:</span>
+                  <span className="stock-label">Remaining Stock</span>
                   <span className="stock-value">{productData.remainingStock}</span>
                 </div>
                 <div className="stock-item">
-                  <span className="stock-label">On the way:</span>
+                  <span className="stock-label">On the way</span>
                   <span className="stock-value">{productData.onTheWay}</span>
                 </div>
               </div>
