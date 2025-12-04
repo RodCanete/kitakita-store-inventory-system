@@ -1,26 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
-const salesData = [
-  { product: 'Maggi', saleValue: 4306, quantity: '43 Packets', saleId: 7535, date: '11/12/22' },
-  { product: 'Bru', saleValue: 2557, quantity: '22 Packets', saleId: 5724, date: '21/12/22' },
-  { product: 'Red Bull', saleValue: 4075, quantity: '36 Packets', saleId: 2775, date: '5/12/22' },
-  { product: 'Bourn Vita', saleValue: 5052, quantity: '14 Packets', saleId: 2275, date: '8/12/22' },
-  { product: 'Horlicks', saleValue: 5370, quantity: '5 Packets', saleId: 2427, date: '9/1/23' },
-  { product: 'Harpic', saleValue: 6065, quantity: '10 Packets', saleId: 2578, date: '9/1/23' },
-  { product: 'Ariel', saleValue: 4078, quantity: '23 Packets', saleId: 2757, date: '15/12/23' },
-  { product: 'Scotch Brite', saleValue: 3559, quantity: '43 Packets', saleId: 3757, date: '6/6/23' },
-  { product: 'Coca cola', saleValue: 2055, quantity: '41 Packets', saleId: 2474, date: '11/11/22' },
-];
-
-export default function Sales() {
+export default function Sales({ token }) {
+  const [salesData, setSalesData] = useState([]);
+  const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    product: '',
+    productId: '',
     quantity: '',
-    saleValue: '',
-    date: ''
+    unitPrice: '',
+    totalValue: '',
+    buyingPrice: '',
+    notes: ''
   });
+  const [loading, setLoading] = useState(false);
+
+  // Fetch sales and products from backend
+  useEffect(() => {
+    fetchSales();
+    fetchProducts();
+  }, []);
+
+  const fetchSales = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/sales', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSalesData(data.content);
+      }
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/products', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.content);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,19 +70,53 @@ export default function Sales() {
 
   const handleDiscard = () => {
     setFormData({
-      product: '',
+      productId: '',
       quantity: '',
-      saleValue: '',
-      date: ''
+      unitPrice: '',
+      totalValue: '',
+      buyingPrice: '',
+      notes: ''
     });
     setShowModal(false);
   };
 
-  const handleAddSale = (e) => {
+  const handleAddSale = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Adding sale:', formData);
-    handleDiscard();
+    try {
+      // Find the selected product to get its price
+      const selectedProduct = products.find(p => p.productId === parseInt(formData.productId));
+      const quantity = parseInt(formData.quantity);
+      const unitPrice = selectedProduct ? selectedProduct.sellingPrice : 0;
+      const totalValue = unitPrice * quantity;
+      const buyingPrice = selectedProduct ? selectedProduct.buyingPrice : 0;
+
+      const saleRequest = {
+        productId: parseInt(formData.productId),
+        quantity: quantity,
+        unitPrice: unitPrice,
+        totalValue: totalValue,
+        buyingPrice: buyingPrice,
+        notes: formData.notes
+      };
+
+      const response = await fetch('http://localhost:8080/api/sales', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(saleRequest)
+      });
+
+      if (response.ok) {
+        await fetchSales(); // Refresh the sales list
+        handleDiscard(); // Close modal and reset form
+      } else {
+        console.error('Failed to add sale');
+      }
+    } catch (error) {
+      console.error('Error adding sale:', error);
+    }
   };
 
   return (
@@ -62,28 +134,32 @@ export default function Sales() {
       </div>
 
       <div className="sales-table-container">
-        <table className="sales-table">
-          <thead>
-            <tr>
-              <th>Products</th>
-              <th>Sale Value</th>
-              <th>Quantity</th>
-              <th>Sale ID</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {salesData.map((sale, idx) => (
-              <tr key={idx}>
-                <td>{sale.product}</td>
-                <td>P{sale.saleValue.toLocaleString()}</td>
-                <td>{sale.quantity}</td>
-                <td>{sale.saleId}</td>
-                <td>{sale.date}</td>
+        {loading ? (
+          <div>Loading sales...</div>
+        ) : (
+          <table className="sales-table">
+            <thead>
+              <tr>
+                <th>Products</th>
+                <th>Sale Value</th>
+                <th>Quantity</th>
+                <th>Sale ID</th>
+                <th>Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {salesData.map((sale) => (
+                <tr key={sale.saleId}>
+                  <td>{sale.productName}</td>
+                  <td>₱{parseFloat(sale.totalValue).toLocaleString()}</td>
+                  <td>{sale.quantity}</td>
+                  <td>{sale.saleCode}</td>
+                  <td>{new Date(sale.saleDate).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="pagination">
@@ -103,22 +179,18 @@ export default function Sales() {
                 <div className="form-field">
                   <label className="form-label">Product</label>
                   <select
-                    name="product"
+                    name="productId"
                     className="form-input"
-                    value={formData.product}
+                    value={formData.productId}
                     onChange={handleInputChange}
                     required
                   >
                     <option value="">Select product</option>
-                    <option value="Maggi">Maggi</option>
-                    <option value="Bru">Bru</option>
-                    <option value="Red Bull">Red Bull</option>
-                    <option value="Bourn Vita">Bourn Vita</option>
-                    <option value="Horlicks">Horlicks</option>
-                    <option value="Harpic">Harpic</option>
-                    <option value="Ariel">Ariel</option>
-                    <option value="Scotch Brite">Scotch Brite</option>
-                    <option value="Coca cola">Coca cola</option>
+                    {products.map((product) => (
+                      <option key={product.productId} value={product.productId}>
+                        {product.productName}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -136,31 +208,16 @@ export default function Sales() {
                 </div>
               </div>
 
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Sale Value</label>
-                  <input
-                    type="number"
-                    name="saleValue"
-                    className="form-input"
-                    placeholder="Enter sale value"
-                    value={formData.saleValue}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label className="form-label">Date</label>
-                  <input
-                    type="date"
-                    name="date"
-                    className="form-input"
-                    value={formData.date}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+              <div className="form-field">
+                <label className="form-label">Notes</label>
+                <textarea
+                  name="notes"
+                  className="form-input"
+                  placeholder="Enter notes (optional)"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  rows="3"
+                />
               </div>
 
               {/* Action Buttons */}
@@ -179,4 +236,3 @@ export default function Sales() {
     </div>
   );
 }
-

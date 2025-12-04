@@ -1,15 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
 
-const suppliersData = [
-  { id: 1, name: 'ABC Food Distributors', contact: '09123456789', email: 'abc@example.com', address: '123 Main St, City', products: 25, status: 'Active' },
-  { id: 2, name: 'XYZ Beverage Co.', contact: '09987654321', email: 'xyz@example.com', address: '456 Market St, City', products: 18, status: 'Active' },
-  { id: 3, name: 'Global Snacks Ltd.', contact: '09555555555', email: 'global@example.com', address: '789 Business Ave, City', products: 32, status: 'Inactive' },
-  { id: 4, name: 'Fresh Produce Inc.', contact: '09111111111', email: 'fresh@example.com', address: '321 Farm Road, City', products: 15, status: 'Active' },
-  { id: 5, name: 'Dairy Delights Co.', contact: '09222222222', email: 'dairy@example.com', address: '654 Dairy Lane, City', products: 12, status: 'Active' },
-];
-
-export default function Suppliers() {
+export default function Suppliers({ token }) {
+  const [suppliersData, setSuppliersData] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({
@@ -18,6 +11,43 @@ export default function Suppliers() {
     email: '',
     address: ''
   });
+  const [loading, setLoading] = useState(false);
+
+  // Fetch suppliers from backend
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/suppliers', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Map the API response to match the existing UI structure
+        const mappedSuppliers = data.content.map(supplier => ({
+          id: supplier.supplierId,
+          name: supplier.supplierName,
+          contact: supplier.contactNumber,
+          email: supplier.email,
+          address: supplier.address,
+          products: 0, // This would need to be calculated from products API
+          status: supplier.isActive ? 'Active' : 'Inactive'
+        }));
+        setSuppliersData(mappedSuppliers);
+      }
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -38,12 +68,35 @@ export default function Suppliers() {
     setShowModal(false);
   };
 
-  const handleAddSupplier = (e) => {
+  const handleAddSupplier = async (e) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Adding supplier:', formData);
-    // Reset form and close modal
-    handleDiscard();
+    try {
+      const supplierRequest = {
+        supplierName: formData.name,
+        contactNumber: formData.contact,
+        email: formData.email,
+        address: formData.address,
+        isActive: true
+      };
+
+      const response = await fetch('http://localhost:8080/api/suppliers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+          },
+        body: JSON.stringify(supplierRequest)
+      });
+
+      if (response.ok) {
+        await fetchSuppliers(); // Refresh the list
+        handleDiscard(); // Close modal and reset form
+      } else {
+        console.error('Failed to add supplier');
+      }
+    } catch (error) {
+      console.error('Error adding supplier:', error);
+    }
   };
 
   const handleEditSupplier = (supplier) => {
@@ -57,12 +110,35 @@ export default function Suppliers() {
     setShowModal(true);
   };
 
-  const handleUpdateSupplier = (e) => {
+  const handleUpdateSupplier = async (e) => {
     e.preventDefault();
-    // Here you would typically send the updated data to your backend
-    console.log('Updating supplier:', selectedSupplier.id, formData);
-    // Reset form and close modal
-    handleDiscard();
+    try {
+      const supplierRequest = {
+        supplierName: formData.name,
+        contactNumber: formData.contact,
+        email: formData.email,
+        address: formData.address,
+        isActive: true
+      };
+
+      const response = await fetch(`http://localhost:8080/api/suppliers/${selectedSupplier.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(supplierRequest)
+      });
+
+      if (response.ok) {
+        await fetchSuppliers(); // Refresh the list
+        handleDiscard(); // Close modal and reset form
+      } else {
+        console.error('Failed to update supplier');
+      }
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+    }
   };
 
   const getStatusClass = (status) => {
@@ -84,43 +160,47 @@ export default function Suppliers() {
 
       {/* Suppliers Table */}
       <div className="suppliers-table-container">
-        <table className="suppliers-table">
-          <thead>
-            <tr>
-              <th>Supplier Name</th>
-              <th>Contact</th>
-              <th>Email</th>
-              <th>Address</th>
-              <th>Products</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {suppliersData.map((supplier) => (
-              <tr key={supplier.id}>
-                <td>{supplier.name}</td>
-                <td>{supplier.contact}</td>
-                <td>{supplier.email}</td>
-                <td>{supplier.address}</td>
-                <td>{supplier.products}</td>
-                <td>
-                  <span className={`status-badge ${getStatusClass(supplier.status)}`}>
-                    {supplier.status}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    className="btn-secondary btn-small"
-                    onClick={() => handleEditSupplier(supplier)}
-                  >
-                    Edit
-                  </button>
-                </td>
+        {loading ? (
+          <div>Loading suppliers...</div>
+        ) : (
+          <table className="suppliers-table">
+            <thead>
+              <tr>
+                <th>Supplier Name</th>
+                <th>Contact</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Products</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {suppliersData.map((supplier) => (
+                <tr key={supplier.id}>
+                  <td>{supplier.name}</td>
+                  <td>{supplier.contact}</td>
+                  <td>{supplier.email}</td>
+                  <td>{supplier.address}</td>
+                  <td>{supplier.products}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(supplier.status)}`}>
+                      {supplier.status}
+                    </span>
+                  </td>
+                  <td>
+                    <button 
+                      className="btn-secondary btn-small"
+                      onClick={() => handleEditSupplier(supplier)}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="pagination">

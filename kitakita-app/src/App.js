@@ -18,24 +18,16 @@ function App() {
   const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('kitakita_token');
-    const savedUser = localStorage.getItem('kitakita_user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      try {
-        setUser(JSON.parse(savedUser));
-        setMode('dashboard');
-      } catch {
-        localStorage.removeItem('kitakita_user');
-      }
-    }
+    // Always start at login page regardless of saved credentials
+    setMode('login');
+    setToken(null);
+    setUser(null);
+    setCurrentPage('dashboard');
+    
+    // Optionally clear saved credentials for a fresh start
+    // localStorage.removeItem('kitakita_token');
+    // localStorage.removeItem('kitakita_user');
   }, []);
-
-  useEffect(() => {
-    if (!token && !user && mode !== 'login' && mode !== 'signup') {
-      setMode('login');
-    }
-  }, [token, user, mode]);
 
   const handleAuthSuccess = (newToken, userObj) => {
     setToken(newToken);
@@ -43,6 +35,7 @@ function App() {
     localStorage.setItem('kitakita_token', newToken);
     localStorage.setItem('kitakita_user', JSON.stringify(userObj));
     setMode('dashboard');
+    setCurrentPage('dashboard'); // Explicitly set to dashboard after login
   };
 
   const handleLogout = async () => {
@@ -57,6 +50,7 @@ function App() {
     localStorage.removeItem('kitakita_token');
     localStorage.removeItem('kitakita_user');
     setMode('login');
+    setCurrentPage('dashboard'); // Reset to default page after logout
   };
 
   const handleNavigate = (page) => {
@@ -64,6 +58,11 @@ function App() {
   };
 
   const renderPage = () => {
+    // Only render protected pages when authenticated
+    if (!token || !user) {
+      return null; // Don't render anything if not authenticated
+    }
+    
     const pageProps = { token, user };
     switch (currentPage) {
       case 'dashboard':
@@ -93,7 +92,7 @@ function App() {
         <Signup onSwitchToLogin={() => setMode('login')} onAuthSuccess={handleAuthSuccess} />
       )}
 
-      {mode === 'dashboard' && user && (
+      {mode === 'dashboard' && user && token && (
         <Layout 
           currentPage={currentPage} 
           onNavigate={handleNavigate} 

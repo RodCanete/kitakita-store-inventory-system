@@ -2,8 +2,10 @@ package com.kitakita.inventory.service.impl;
 
 import com.kitakita.inventory.dto.response.DashboardSummaryResponse;
 import com.kitakita.inventory.entity.Product;
+import com.kitakita.inventory.entity.User;
 import com.kitakita.inventory.repository.ProductRepository;
 import com.kitakita.inventory.service.DashboardService;
+import com.kitakita.inventory.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +26,14 @@ import java.util.stream.Collectors;
 public class DashboardServiceImpl implements DashboardService {
 
     private final ProductRepository productRepository;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional(readOnly = true)
     public DashboardSummaryResponse getSummary() {
-        List<Product> products = productRepository.findAll();
+        User currentUser = securityUtils.getCurrentUser();
+        // For now, we'll get all products (this needs to be updated to filter by user)
+        List<Product> products = productRepository.findAll(); // TODO: Filter by user
 
         DashboardSummaryResponse.SummaryCards cards = buildSummaryCards(products);
         List<DashboardSummaryResponse.ChartPoint> inventoryByCategory = buildInventoryByCategory(products);
@@ -168,4 +173,3 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 }
-

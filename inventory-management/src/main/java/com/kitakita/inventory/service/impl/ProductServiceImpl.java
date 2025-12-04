@@ -7,11 +7,14 @@ import com.kitakita.inventory.dto.response.ProductResponse;
 import com.kitakita.inventory.entity.Category;
 import com.kitakita.inventory.entity.Product;
 import com.kitakita.inventory.entity.Supplier;
+import com.kitakita.inventory.entity.User;
 import com.kitakita.inventory.exception.ResourceNotFoundException;
 import com.kitakita.inventory.repository.CategoryRepository;
 import com.kitakita.inventory.repository.ProductRepository;
 import com.kitakita.inventory.repository.SupplierRepository;
+import com.kitakita.inventory.repository.UserRepository;
 import com.kitakita.inventory.service.ProductService;
+import com.kitakita.inventory.security.SecurityUtils;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
@@ -45,11 +48,15 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final SupplierRepository supplierRepository;
+    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<ProductResponse> getProducts(String search, Integer categoryId, Pageable pageable) {
+        User currentUser = securityUtils.getCurrentUser();
         Page<Product> productPage = productRepository.searchProducts(
+                currentUser,
                 normalize(search),
                 categoryId,
                 pageable
@@ -69,6 +76,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
+        User currentUser = securityUtils.getCurrentUser();
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
@@ -83,6 +91,7 @@ public class ProductServiceImpl implements ProductService {
                 .productCode(resolveProductCode(request.getProductCode()))
                 .category(category)
                 .supplier(supplier)
+                .user(currentUser)
                 .buyingPrice(request.getBuyingPrice())
                 .sellingPrice(request.getSellingPrice())
                 .unit(request.getUnit())
@@ -102,8 +111,14 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse updateProduct(Integer productId, ProductRequest request) {
+        User currentUser = securityUtils.getCurrentUser();
         Product existing = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        // Check if the product belongs to the current user
+        if (!existing.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResourceNotFoundException("Product not found");
+        }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -138,15 +153,24 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(Integer productId) {
+        User currentUser = securityUtils.getCurrentUser();
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        
+        // Check if the product belongs to the current user
+        if (!product.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+        
         productRepository.delete(product);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] exportInventoryPdf(String search, Integer categoryId) {
+        User currentUser = securityUtils.getCurrentUser();
         Page<Product> productPage = productRepository.searchProducts(
+                currentUser,
                 normalize(search),
                 categoryId,
                 Pageable.unpaged()
@@ -159,6 +183,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public ProductReferenceDataResponse getReferenceData() {
+        User currentUser = securityUtils.getCurrentUser();
         var categories = categoryRepository.findAll().stream()
                 .map(category -> ProductReferenceDataResponse.Option.builder()
                         .id(category.getCategoryId())
@@ -166,7 +191,7 @@ public class ProductServiceImpl implements ProductService {
                         .build())
                 .toList();
 
-        var suppliers = supplierRepository.findAll().stream()
+        var suppliers = supplierRepository.findByUser(currentUser).stream()
                 .map(supplier -> ProductReferenceDataResponse.Option.builder()
                         .id(supplier.getSupplierId())
                         .label(supplier.getSupplierName())
@@ -226,11 +251,11 @@ public class ProductServiceImpl implements ProductService {
             document.add(new Paragraph("Generated on: " + DateTimeFormatter.ISO_DATE.format(LocalDate.now())));
             document.add(new Paragraph("Total products: " + products.size()));
             document.add(new Paragraph(" "));
-
+            
             PdfPTable table = new PdfPTable(7);
             table.setWidthPercentage(100);
             table.setWidths(new float[]{3f, 2f, 2f, 2f, 2f, 2f, 2f});
-
+            
             addHeader(table, "Product");
             addHeader(table, "Code");
             addHeader(table, "Category");
@@ -238,7 +263,7 @@ public class ProductServiceImpl implements ProductService {
             addHeader(table, "Unit");
             addHeader(table, "Buying Price");
             addHeader(table, "Selling Price");
-
+            
             products.forEach(product -> {
                 table.addCell(nullable(product.getProductName()));
                 table.addCell(nullable(product.getProductCode()));
@@ -248,27 +273,27 @@ public class ProductServiceImpl implements ProductService {
                 table.addCell(toCurrency(product.getBuyingPrice()));
                 table.addCell(toCurrency(product.getSellingPrice()));
             });
-
+            
             document.add(table);
         } catch (DocumentException e) {
             throw new IllegalStateException("Failed to generate PDF", e);
         } finally {
             document.close();
         }
-
+        
         return baos.toByteArray();
     }
-
+    
     private void addHeader(PdfPTable table, String text) {
         Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
         PdfPCell headerCell = new PdfPCell(new Paragraph(text, headerFont));
         table.addCell(headerCell);
     }
-
+    
     private String nullable(Object value) {
         return Objects.toString(value, "-");
     }
-
+    
     private String toCurrency(BigDecimal value) {
         if (value == null) {
             return "-";
@@ -291,4 +316,3 @@ public class ProductServiceImpl implements ProductService {
         return "SKU-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }
-
