@@ -3,10 +3,11 @@ import '../App.css';
 import logo from '../images/app_logo.png';
 import googleIcon from '../images/google_icon.png';
 
-export default function Signup({onSwitchToLogin, onAuthSuccess}) {
+export default function Signup({ onSwitchToLogin, onAuthSuccess }) {
   const [name, setName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
 
@@ -15,11 +16,17 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+
+    // 🔐 Check if passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
 
     const apiUrl = `${apiBase}/api/auth/signup`;
     console.log('Signup attempt to:', apiUrl);
-    console.log('API Base URL:', apiBase);
 
     try {
       const res = await fetch(apiUrl, {
@@ -55,8 +62,7 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
       if (onAuthSuccess) onAuthSuccess(payload.token, user);
     } catch (err) {
       console.error('Signup error:', err);
-      
-      // Handle network errors (Failed to fetch)
+
       if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
         setError(`Cannot connect to backend server at ${apiBase}. Please ensure:
         1. Backend is running on ${apiBase}
@@ -75,35 +81,77 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
       <div className="auth-left">
         <div className="brand-wrap">
           <img src={logo} alt="Kita Kita" className="brand-logo" />
-    
         </div>
       </div>
 
       <div className="auth-right">
         <div className="form-card">
           <img src={logo} alt="logo small" className="brand-small" />
-          <h2>Create your account</h2>
+          <h2 className="form-title">Create your account</h2>
           <p className="muted">Provide your email and choose a password to get started.</p>
 
           <form onSubmit={handleSubmit} aria-label="Signup form">
             <div className="field">
               <label htmlFor="name" className="input-label">Full name</label>
-              <input id="name" name="name" className="input" placeholder="Your full name" required value={name} onChange={e => setName(e.target.value)} />
+              <input
+                id="name"
+                name="name"
+                className="input"
+                placeholder="Your full name"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
             </div>
 
             <div className="field">
               <label htmlFor="email" className="input-label">Email</label>
-              <input id="email" name="email" className="input" placeholder="Enter your email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+              <input
+                id="email"
+                name="email"
+                className="input"
+                placeholder="Enter your email"
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
             </div>
 
             <div className="field">
               <label htmlFor="password" className="input-label">Password</label>
-              <input id="password" name="password" className="input" type="password" placeholder="Create a password" required value={password} onChange={e => setPassword(e.target.value)} />
+              <input
+                id="password"
+                name="password"
+                className="input"
+                type="password"
+                placeholder="Create password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+            </div>
+
+            {/* 🔐 Confirm Password */}
+            <div className="field">
+              <label htmlFor="confirmPassword" className="input-label">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                className="input"
+                type="password"
+                placeholder="Confirm Password"
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+              />
             </div>
 
             {error && <div className="form-error" role="alert">{error}</div>}
 
-            <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Creating account…' : 'Sign up'}</button>
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Creating account…' : 'Sign up'}
+            </button>
 
             <div className="divider"><span>or</span></div>
 
@@ -113,7 +161,10 @@ export default function Signup({onSwitchToLogin, onAuthSuccess}) {
             </button>
           </form>
 
-          <p className="footer-text">Already have an account? <button className="link-button" onClick={onSwitchToLogin}>Sign in</button></p>
+          <p className="footer-text">
+            Already have an account?
+            <button className="link-button" onClick={onSwitchToLogin}>Sign in</button>
+          </p>
         </div>
       </div>
     </div>
