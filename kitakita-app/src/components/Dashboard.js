@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DashboardApi } from '../api/client';
 import '../App.css';
 
@@ -14,28 +14,9 @@ const formatCurrency = (value) => {
 };
 
 export default function Dashboard({ token }) {
-  const [chartWidth, setChartWidth] = useState(600);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const updateChartWidth = () => {
-      const card = document.querySelector('.chart-card');
-      if (card) {
-        const availableWidth = card.offsetWidth - 48;
-        const width = Math.max(availableWidth, 300);
-        setChartWidth(width);
-      }
-    };
-
-    const timer = setTimeout(updateChartWidth, 100);
-    window.addEventListener('resize', updateChartWidth);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('resize', updateChartWidth);
-    };
-  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -150,14 +131,16 @@ export default function Dashboard({ token }) {
             <h3>Inventory by Category</h3>
           </div>
           <div className="chart-wrapper">
-            <BarChart width={chartWidth} height={300} data={inventoryByCategory}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" name="Quantity" fill="#0b63e8" />
-            </BarChart>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={inventoryByCategory}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" name="Quantity" fill="#0b63e8" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -166,14 +149,16 @@ export default function Dashboard({ token }) {
             <h3>Stock Movement</h3>
           </div>
           <div className="chart-wrapper">
-            <LineChart width={chartWidth} height={300} data={stockMovement}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#0b63e8" strokeWidth={2} name="Quantity" />
-            </LineChart>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={stockMovement}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="value" stroke="#0b63e8" strokeWidth={2} name="Quantity" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>

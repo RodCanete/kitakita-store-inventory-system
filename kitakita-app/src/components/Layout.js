@@ -3,6 +3,18 @@ import '../App.css';
 import logo from '../images/app_logo.png';
 
 export default function Layout({ children, currentPage, onNavigate, onLogout, user }) {
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (user && user.fullName) {
+      const names = user.fullName.split(' ');
+      if (names.length >= 2) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      }
+      return names[0][0].toUpperCase();
+    }
+    return 'U';
+  };
+
   return (
     <div className="app-layout">
       {/* Sidebar */}
@@ -80,8 +92,14 @@ export default function Layout({ children, currentPage, onNavigate, onLogout, us
           </div>
           <div className="top-bar-right">
             <button className="icon-button">🔔</button>
-            <div className="user-avatar">
-              <img src="https://ui-avatars.com/api/?name=User&background=0b63e8&color=fff" alt="User" />
+            <div className="user-avatar" title={user ? user.fullName : 'User'}>
+              {user ? (
+                <span style={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: '#0b63e8', color: 'white', fontWeight: 'bold', fontSize: '16px'}}>
+                  {getUserInitials()}
+                </span>
+              ) : (
+                <img src="https://ui-avatars.com/api/?name=User&background=0b63e8&color=fff" alt="User" />
+              )}
             </div>
           </div>
         </header>
@@ -94,5 +112,3 @@ export default function Layout({ children, currentPage, onNavigate, onLogout, us
     </div>
   );
 }
-
-
