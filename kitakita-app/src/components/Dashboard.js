@@ -42,14 +42,17 @@ export default function Dashboard({ token }) {
     let isMounted = true;
 
     const loadSummary = async () => {
+      console.log('Fetching dashboard data with token:', token.substring(0, 10) + '...');
       setLoading(true);
       setError(null);
       try {
         const data = await DashboardApi.summary(token);
+        console.log('Received dashboard data:', data);
         if (isMounted) {
           setSummary(data);
         }
       } catch (err) {
+        console.error('Error fetching dashboard data:', err);
         if (isMounted) {
           setError(err.message);
         }
@@ -235,4 +238,3 @@ export default function Dashboard({ token }) {
     </div>
   );
 }
-

@@ -1,12 +1,17 @@
 package com.kitakita.inventory.controller;
 
 import com.kitakita.inventory.dto.request.ProductRequest;
+import com.kitakita.inventory.dto.request.PurchaseRequest;
+import com.kitakita.inventory.dto.response.AdjustmentHistoryResponse;
 import com.kitakita.inventory.dto.response.PagedResponse;
 import com.kitakita.inventory.dto.response.ProductReferenceDataResponse;
 import com.kitakita.inventory.dto.response.ProductResponse;
+import com.kitakita.inventory.dto.response.PurchaseHistoryResponse;
+import com.kitakita.inventory.service.ProductHistoryService;
 import com.kitakita.inventory.service.ProductService;
+import com.kitakita.inventory.service.PurchaseService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -17,13 +22,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ProductController {
 
-    private final ProductService productService;
+    @Autowired
+    private ProductService productService;
+    
+    @Autowired
+    private ProductHistoryService productHistoryService;
+    
+    @Autowired
+    private PurchaseService purchaseService;
 
     @GetMapping
     public PagedResponse<ProductResponse> listProducts(
@@ -76,6 +89,23 @@ public class ProductController {
         return productService.getReferenceData();
     }
 
+    @GetMapping("/{productId}/purchases")
+    public List<PurchaseHistoryResponse> getProductPurchases(@PathVariable Integer productId) {
+        return productHistoryService.getProductPurchases(productId);
+    }
+
+    @GetMapping("/{productId}/adjustments")
+    public List<AdjustmentHistoryResponse> getProductAdjustments(@PathVariable Integer productId) {
+        return productHistoryService.getProductAdjustments(productId);
+    }
+
+    @PostMapping("/{productId}/purchases")
+    public PurchaseHistoryResponse createPurchase(@PathVariable Integer productId, @Valid @RequestBody PurchaseRequest request) {
+        // Ensure the productId in the path matches the productId in the request
+        request.setProductId(productId);
+        return purchaseService.createPurchase(request);
+    }
+
     private Pageable buildPageable(int page, int size, String sort) {
         String[] sortParts = sort.split(",");
         String sortProperty = sortParts[0];
@@ -85,4 +115,3 @@ public class ProductController {
         return PageRequest.of(Math.max(page, 0), Math.max(size, 1), Sort.by(direction, sortProperty));
     }
 }
-

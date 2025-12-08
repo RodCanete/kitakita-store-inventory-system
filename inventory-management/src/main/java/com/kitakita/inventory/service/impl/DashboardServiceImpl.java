@@ -7,6 +7,7 @@ import com.kitakita.inventory.repository.ProductRepository;
 import com.kitakita.inventory.service.DashboardService;
 import com.kitakita.inventory.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +16,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,8 +32,9 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse getSummary() {
         User currentUser = securityUtils.getCurrentUser();
-        // For now, we'll get all products (this needs to be updated to filter by user)
-        List<Product> products = productRepository.findAll(); // TODO: Filter by user
+        
+        // Get products for current user only
+        List<Product> products = productRepository.searchProducts(currentUser, null, null, PageRequest.of(0, 1000)).getContent();
 
         DashboardSummaryResponse.SummaryCards cards = buildSummaryCards(products);
         List<DashboardSummaryResponse.ChartPoint> inventoryByCategory = buildInventoryByCategory(products);
@@ -52,11 +53,15 @@ public class DashboardServiceImpl implements DashboardService {
 
     private DashboardSummaryResponse.SummaryCards buildSummaryCards(List<Product> products) {
         long totalProducts = products.size();
+        
+        // Count distinct categories for this user
         long totalCategories = products.stream()
                 .map(product -> product.getCategory() != null ? product.getCategory().getCategoryId() : null)
                 .filter(id -> id != null)
                 .distinct()
                 .count();
+        
+        // Count distinct suppliers for this user
         long totalSuppliers = products.stream()
                 .map(product -> product.getSupplier() != null ? product.getSupplier().getSupplierId() : null)
                 .filter(id -> id != null)

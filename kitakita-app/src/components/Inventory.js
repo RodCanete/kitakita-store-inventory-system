@@ -522,6 +522,7 @@ export default function Inventory({ token }) {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onEdit={openEditModal}
+          token={token}
         />
       )}
     </div>

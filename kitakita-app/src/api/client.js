@@ -68,11 +68,19 @@ export const ProductsApi = {
       token,
       headers: { Accept: 'application/pdf' },
       query: { search, categoryId }
-    })
+    }),
+  getPurchases: (productId, token) =>
+    apiRequest(`/api/products/${productId}/purchases`, { token }),
+  getAdjustments: (productId, token) =>
+    apiRequest(`/api/products/${productId}/adjustments`, { token }),
+  createPurchase: (productId, payload, token) =>
+    apiRequest(`/api/products/${productId}/purchases`, { method: 'POST', body: payload, token })
 };
 
 export const DashboardApi = {
   summary: (token) => apiRequest('/api/dashboard/summary', { token })
 };
 
-
+export const ReportsApi = {
+  getReports: (token) => apiRequest('/api/reports', { token })
+};

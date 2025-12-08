@@ -42,7 +42,7 @@ public class Purchase {
     private LocalDateTime purchaseDate;
     
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "ENUM('completed', 'cancelled', 'pending')")
+    @Column(columnDefinition = "ENUM('COMPLETED', 'CANCELLED', 'PENDING')")
     private PurchaseStatus status = PurchaseStatus.COMPLETED;
     
     @Column(columnDefinition = "TEXT")

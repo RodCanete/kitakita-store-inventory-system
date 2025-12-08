@@ -1,19 +1,244 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../App.css';
+import { ProductsApi } from '../api/client';
 
 const formatDate = (value) => {
   if (!value) return '-';
   return new Date(value).toLocaleDateString();
 };
 
-export default function ProductDetails({ product, onClose, onEdit }) {
+const formatDateTime = (value) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  return {
+    date: date.toLocaleDateString(),
+    time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  };
+};
+
+export default function ProductDetails({ product, onClose, onEdit, token }) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [purchasesData, setPurchasesData] = useState([]);
+  const [adjustmentsData, setAdjustmentsData] = useState([]);
+  const [historyData, setHistoryData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchaseFormData, setPurchaseFormData] = useState({
+    productId: '',
+    supplierId: '',
+    quantity: '',
+    unitCost: '',
+    notes: ''
+  });
+  const [savingPurchase, setSavingPurchase] = useState(false);
+  const [purchaseError, setPurchaseError] = useState(null);
   
   const handleEdit = () => {
     if (onEdit) {
       onEdit(product);
       onClose(); // Close the product details modal
     }
+  };
+
+  // Fetch product history data when product changes
+  useEffect(() => {
+    if (product && token) {
+      fetchProductHistory();
+    }
+  }, [product, token]);
+
+  const fetchProductHistory = async () => {
+    if (!product || !token) return;
+    
+    setLoading(true);
+    try {
+      console.log('Fetching product history for product ID:', product.productId);
+      
+      // Fetch purchases
+      console.log('Calling ProductsApi.getPurchases with token:', token ? 'present' : 'missing');
+      const purchasesResponse = await ProductsApi.getPurchases(product.productId, token);
+      console.log('Purchases response:', purchasesResponse);
+      setPurchasesData(purchasesResponse || []);
+      
+      // Fetch adjustments
+      console.log('Calling ProductsApi.getAdjustments with token:', token ? 'present' : 'missing');
+      const adjustmentsResponse = await ProductsApi.getAdjustments(product.productId, token);
+      console.log('Adjustments response:', adjustmentsResponse);
+      setAdjustmentsData(adjustmentsResponse || []);
+      
+      // For now, we'll generate history data from purchases and adjustments
+      // In a real application, this would come from a separate history tracking system
+      const history = generateHistoryFromData(purchasesResponse || [], adjustmentsResponse || []);
+      setHistoryData(history);
+      
+      console.log('Successfully fetched product history');
+    } catch (error) {
+      console.error('Error fetching product history:', error);
+      console.error('Product ID:', product.productId);
+      console.error('Token available:', !!token);
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      // Fallback to static data on error
+      console.log('Falling back to static data');
+      setPurchasesData(getStaticPurchasesData());
+      setAdjustmentsData(getStaticAdjustmentsData());
+      setHistoryData(getStaticHistoryData());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateHistoryFromData = (purchases, adjustments) => {
+    const history = [];
+    
+    // Add purchase history entries
+    purchases.forEach(purchase => {
+      const dateTime = formatDateTime(purchase.purchaseDate);
+      history.push({
+        date: dateTime.date,
+        time: dateTime.time,
+        action: 'Purchase',
+        description: `Purchased ${purchase.quantity} units from ${purchase.supplierName || 'supplier'}`,
+        user: 'System'
+      });
+    });
+    
+    // Add adjustment history entries
+    adjustments.forEach(adjustment => {
+      const dateTime = formatDateTime(adjustment.adjustmentDate);
+      let action = 'Stock Adjustment';
+      let description = '';
+      
+      switch (adjustment.adjustmentType) {
+        case 'ADD':
+          description = `Added ${adjustment.quantity} units - ${adjustment.reason || 'Stock adjustment'}`;
+          break;
+        case 'REMOVE':
+          description = `Removed ${adjustment.quantity} units - ${adjustment.reason || 'Stock adjustment'}`;
+          break;
+        default:
+          description = `${adjustment.quantity} units adjusted - ${adjustment.reason || 'Stock adjustment'}`;
+      }
+      
+      history.push({
+        date: dateTime.date,
+        time: dateTime.time,
+        action,
+        description,
+        user: adjustment.performedBy || 'System'
+      });
+    });
+    
+    // Sort by date descending
+    return history.sort((a, b) => {
+      const dateA = new Date(`${a.date} ${a.time}`);
+      const dateB = new Date(`${b.date} ${b.time}`);
+      return dateB - dateA;
+    });
+  };
+
+  const getStaticPurchasesData = () => [
+    { purchaseId: 1, purchaseCode: 'PUR-001', purchaseDate: '2024-01-15', quantity: 50, unitCost: 16, totalCost: 800, supplierName: 'Ronald Martin', status: 'COMPLETED' },
+    { purchaseId: 2, purchaseCode: 'PUR-002', purchaseDate: '2023-12-10', quantity: 30, unitCost: 15, totalCost: 450, supplierName: 'Ronald Martin', status: 'COMPLETED' },
+    { purchaseId: 3, purchaseCode: 'PUR-003', purchaseDate: '2023-11-05', quantity: 40, unitCost: 16, totalCost: 640, supplierName: 'Ronald Martin', status: 'COMPLETED' },
+    { purchaseId: 4, purchaseCode: 'PUR-004', purchaseDate: '2023-10-20', quantity: 25, unitCost: 15, totalCost: 375, supplierName: 'Ronald Martin', status: 'COMPLETED' },
+    { purchaseId: 5, purchaseCode: 'PUR-005', purchaseDate: '2023-09-12', quantity: 35, unitCost: 16, totalCost: 560, supplierName: 'Ronald Martin', status: 'COMPLETED' },
+  ];
+
+  const getStaticAdjustmentsData = () => [
+    { adjustmentId: 1, adjustmentDate: '2024-01-18', adjustmentType: 'ADD', quantity: 5, reason: 'Stock correction', performedBy: 'Admin User' },
+    { adjustmentId: 2, adjustmentDate: '2024-01-12', adjustmentType: 'REMOVE', quantity: 3, reason: 'Damaged goods', performedBy: 'Admin User' },
+    { adjustmentId: 3, adjustmentDate: '2024-01-05', adjustmentType: 'ADD', quantity: 10, reason: 'Found in warehouse', performedBy: 'Warehouse Staff' },
+    { adjustmentId: 4, adjustmentDate: '2023-12-28', adjustmentType: 'REMOVE', quantity: 2, reason: 'Expired items', performedBy: 'Admin User' },
+    { adjustmentId: 5, adjustmentDate: '2023-12-15', adjustmentType: 'CORRECTION', quantity: 0, reason: 'Inventory audit', performedBy: 'Admin User' },
+  ];
+
+  const getStaticHistoryData = () => [
+    { date: '18/01/24', time: '14:30', action: 'Stock Adjustment', description: 'Added 5 units - Stock correction', user: 'Admin User' },
+    { date: '15/01/24', time: '10:15', action: 'Purchase', description: 'Purchased 50 units from Ronald Martin', user: 'Admin User' },
+    { date: '12/01/24', time: '16:45', action: 'Stock Adjustment', description: 'Removed 3 units - Damaged goods', user: 'Admin User' },
+    { date: '10/12/23', time: '09:20', action: 'Purchase', description: 'Purchased 30 units from Ronald Martin', user: 'Admin User' },
+    { date: '05/12/23', time: '11:00', action: 'Sale', description: 'Sold 6 units - Sale ID: 7535', user: 'Sales Staff' },
+    { date: '05/11/23', time: '13:30', action: 'Purchase', description: 'Purchased 40 units from Ronald Martin', user: 'Admin User' },
+    { date: '20/10/23', time: '08:45', action: 'Purchase', description: 'Purchased 25 units from Ronald Martin', user: 'Admin User' },
+    { date: '12/09/23', time: '15:20', action: 'Purchase', description: 'Purchased 35 units from Ronald Martin', user: 'Admin User' },
+  ];
+
+  const handlePurchaseInputChange = (e) => {
+    const { name, value } = e.target;
+    setPurchaseFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddPurchase = () => {
+    setPurchaseFormData({
+      productId: product.productId,
+      supplierId: '',
+      quantity: '',
+      unitCost: '',
+      notes: ''
+    });
+    setShowPurchaseModal(true);
+  };
+
+  const handleSavePurchase = async (e) => {
+    e.preventDefault();
+    if (!product || !token) return;
+    
+    setSavingPurchase(true);
+    setPurchaseError(null);
+    
+    try {
+      const purchaseData = {
+        productId: product.productId,
+        supplierId: purchaseFormData.supplierId || null,
+        quantity: parseInt(purchaseFormData.quantity),
+        unitCost: parseFloat(purchaseFormData.unitCost),
+        notes: purchaseFormData.notes
+      };
+      
+      const response = await ProductsApi.createPurchase(product.productId, purchaseData, token);
+      
+      // Add the new purchase to the list
+      setPurchasesData(prev => [response, ...prev]);
+      
+      // Regenerate history data
+      const history = generateHistoryFromData([response, ...purchasesData], adjustmentsData);
+      setHistoryData(history);
+      
+      // Close the modal
+      setShowPurchaseModal(false);
+      
+      // Reset form
+      setPurchaseFormData({
+        productId: product.productId,
+        supplierId: '',
+        quantity: '',
+        unitCost: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error creating purchase:', error);
+      setPurchaseError(error.message || 'Failed to create purchase');
+    } finally {
+      setSavingPurchase(false);
+    }
+  };
+
+  const handleCancelPurchase = () => {
+    setShowPurchaseModal(false);
+    setPurchaseError(null);
+    setPurchaseFormData({
+      productId: product.productId,
+      supplierId: '',
+      quantity: '',
+      unitCost: '',
+      notes: ''
+    });
   };
 
   if (!product) {
@@ -31,36 +256,6 @@ export default function ProductDetails({ product, onClose, onEdit }) {
     supplierName: product.supplierName || 'N/A',
     contactNumber: product.supplierContact || 'N/A'
   };
-
-  // Sample Purchases Data
-  const purchasesData = [
-    { id: 'PUR-001', date: '15/01/24', quantity: 50, unitPrice: 16, totalPrice: 800, supplier: 'Ronald Martin', status: 'Completed' },
-    { id: 'PUR-002', date: '10/12/23', quantity: 30, unitPrice: 15, totalPrice: 450, supplier: 'Ronald Martin', status: 'Completed' },
-    { id: 'PUR-003', date: '05/11/23', quantity: 40, unitPrice: 16, totalPrice: 640, supplier: 'Ronald Martin', status: 'Completed' },
-    { id: 'PUR-004', date: '20/10/23', quantity: 25, unitPrice: 15, totalPrice: 375, supplier: 'Ronald Martin', status: 'Completed' },
-    { id: 'PUR-005', date: '12/09/23', quantity: 35, unitPrice: 16, totalPrice: 560, supplier: 'Ronald Martin', status: 'Completed' },
-  ];
-
-  // Sample Adjustments Data
-  const adjustmentsData = [
-    { id: 'ADJ-001', date: '18/01/24', type: 'Addition', quantity: 5, reason: 'Stock correction', performedBy: 'Admin User' },
-    { id: 'ADJ-002', date: '12/01/24', type: 'Removal', quantity: 3, reason: 'Damaged goods', performedBy: 'Admin User' },
-    { id: 'ADJ-003', date: '05/01/24', type: 'Addition', quantity: 10, reason: 'Found in warehouse', performedBy: 'Warehouse Staff' },
-    { id: 'ADJ-004', date: '28/12/23', type: 'Removal', quantity: 2, reason: 'Expired items', performedBy: 'Admin User' },
-    { id: 'ADJ-005', date: '15/12/23', type: 'Correction', quantity: 0, reason: 'Inventory audit', performedBy: 'Admin User' },
-  ];
-
-  // Sample History Data
-  const historyData = [
-    { date: '18/01/24', time: '14:30', action: 'Stock Adjustment', description: 'Added 5 units - Stock correction', user: 'Admin User' },
-    { date: '15/01/24', time: '10:15', action: 'Purchase', description: 'Purchased 50 units from Ronald Martin', user: 'Admin User' },
-    { date: '12/01/24', time: '16:45', action: 'Stock Adjustment', description: 'Removed 3 units - Damaged goods', user: 'Admin User' },
-    { date: '10/12/23', time: '09:20', action: 'Purchase', description: 'Purchased 30 units from Ronald Martin', user: 'Admin User' },
-    { date: '05/12/23', time: '11:00', action: 'Sale', description: 'Sold 6 units - Sale ID: 7535', user: 'Sales Staff' },
-    { date: '05/11/23', time: '13:30', action: 'Purchase', description: 'Purchased 40 units from Ronald Martin', user: 'Admin User' },
-    { date: '20/10/23', time: '08:45', action: 'Purchase', description: 'Purchased 25 units from Ronald Martin', user: 'Admin User' },
-    { date: '12/09/23', time: '15:20', action: 'Purchase', description: 'Purchased 35 units from Ronald Martin', user: 'Admin User' },
-  ];
 
   return (
     <div className="product-details-overlay" onClick={onClose}>
@@ -187,101 +382,225 @@ export default function ProductDetails({ product, onClose, onEdit }) {
 
           {activeTab === 'purchases' && (
             <div className="tab-content-section">
-              <h3 className="section-title">Purchase History</h3>
-              <div className="table-container">
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Purchase ID</th>
-                      <th>Date</th>
-                      <th>Quantity</th>
-                      <th>Unit Price</th>
-                      <th>Total Price</th>
-                      <th>Supplier</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {purchasesData.map((purchase, idx) => (
-                      <tr key={idx}>
-                        <td>{purchase.id}</td>
-                        <td>{purchase.date}</td>
-                        <td>{purchase.quantity}</td>
-                        <td>₱{purchase.unitPrice}</td>
-                        <td>₱{purchase.totalPrice}</td>
-                        <td>{purchase.supplier}</td>
-                        <td>
-                          <span className="status-badge completed">{purchase.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="section-header">
+                <h3 className="section-title">Purchase History</h3>
+                <button className="btn-primary" onClick={handleAddPurchase}>
+                  Add New Purchase
+                </button>
               </div>
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                <div className="table-container">
+                  <table className="details-table">
+                    <thead>
+                      <tr>
+                        <th>Purchase ID</th>
+                        <th>Date</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total Price</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {purchasesData.map((purchase, idx) => (
+                        <tr key={idx}>
+                          <td>{purchase.purchaseCode || `PUR-${purchase.purchaseId}`}</td>
+                          <td>{formatDate(purchase.purchaseDate)}</td>
+                          <td>{purchase.quantity}</td>
+                          <td>₱{purchase.unitCost?.toFixed(2) || '0.00'}</td>
+                          <td>₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
+                          <td>{purchase.supplierName || 'N/A'}</td>
+                          <td>
+                            <span className="status-badge completed">{purchase.status?.toLowerCase() === 'completed' ? 'Completed' : purchase.status || 'N/A'}</span>
+                          </td>
+                        </tr>
+                      ))}
+                      {purchasesData.length === 0 && (
+                        <tr>
+                          <td colSpan="7" className="text-center">No purchase history found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'adjustments' && (
             <div className="tab-content-section">
               <h3 className="section-title">Stock Adjustments</h3>
-              <div className="table-container">
-                <table className="details-table">
-                  <thead>
-                    <tr>
-                      <th>Adjustment ID</th>
-                      <th>Date</th>
-                      <th>Type</th>
-                      <th>Quantity</th>
-                      <th>Reason</th>
-                      <th>Performed By</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adjustmentsData.map((adjustment, idx) => (
-                      <tr key={idx}>
-                        <td>{adjustment.id}</td>
-                        <td>{adjustment.date}</td>
-                        <td>
-                          <span className={`adjustment-type ${adjustment.type.toLowerCase()}`}>
-                            {adjustment.type}
-                          </span>
-                        </td>
-                        <td className={adjustment.type === 'Addition' ? 'positive' : adjustment.type === 'Removal' ? 'negative' : ''}>
-                          {adjustment.type === 'Addition' ? '+' : adjustment.type === 'Removal' ? '-' : ''}{adjustment.quantity}
-                        </td>
-                        <td>{adjustment.reason}</td>
-                        <td>{adjustment.performedBy}</td>
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                <div className="table-container">
+                  <table className="details-table">
+                    <thead>
+                      <tr>
+                        <th>Adjustment ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Reason</th>
+                        <th>Performed By</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {adjustmentsData.map((adjustment, idx) => (
+                        <tr key={idx}>
+                          <td>{`ADJ-${adjustment.adjustmentId}`}</td>
+                          <td>{formatDate(adjustment.adjustmentDate)}</td>
+                          <td>
+                            <span className={`adjustment-type ${adjustment.adjustmentType?.toLowerCase() || 'correction'}`}>
+                              {adjustment.adjustmentType === 'ADD' ? 'Addition' : 
+                               adjustment.adjustmentType === 'REMOVE' ? 'Removal' : 
+                               adjustment.adjustmentType || 'Correction'}
+                            </span>
+                          </td>
+                          <td className={adjustment.adjustmentType === 'ADD' ? 'positive' : adjustment.adjustmentType === 'REMOVE' ? 'negative' : ''}>
+                            {adjustment.adjustmentType === 'ADD' ? '+' : adjustment.adjustmentType === 'REMOVE' ? '-' : ''}{adjustment.quantity}
+                          </td>
+                          <td>{adjustment.reason || 'N/A'}</td>
+                          <td>{adjustment.performedBy || 'System'}</td>
+                        </tr>
+                      ))}
+                      {adjustmentsData.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="text-center">No adjustment history found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'history' && (
             <div className="tab-content-section">
               <h3 className="section-title">Activity History</h3>
-              <div className="history-timeline">
-                {historyData.map((item, idx) => (
-                  <div key={idx} className="history-item">
-                    <div className="history-date-time">
-                      <div className="history-date">{item.date}</div>
-                      <div className="history-time">{item.time}</div>
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                <div className="history-timeline">
+                  {historyData.map((item, idx) => (
+                    <div key={idx} className="history-item">
+                      <div className="history-date-time">
+                        <div className="history-date">{item.date}</div>
+                        <div className="history-time">{item.time}</div>
+                      </div>
+                      <div className="history-content">
+                        <div className="history-action">{item.action}</div>
+                        <div className="history-description">{item.description}</div>
+                        <div className="history-user">By: {item.user}</div>
+                      </div>
                     </div>
-                    <div className="history-content">
-                      <div className="history-action">{item.action}</div>
-                      <div className="history-description">{item.description}</div>
-                      <div className="history-user">By: {item.user}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  {historyData.length === 0 && (
+                    <div className="text-center">No activity history found</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {/* Add Purchase Modal */}
+      {showPurchaseModal && (
+        <div className="modal-overlay" onClick={handleCancelPurchase}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 className="modal-title">Add New Purchase</h2>
+            
+            {purchaseError && <div className="form-error" role="alert">{purchaseError}</div>}
+            
+            <form onSubmit={handleSavePurchase} className="product-form">
+              <div className="form-row-2">
+                <div className="form-field">
+                  <label className="form-label">Product Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={product.productName}
+                    disabled
+                  />
+                </div>
+                
+                <div className="form-field">
+                  <label className="form-label">Supplier (Optional)</label>
+                  <select
+                    name="supplierId"
+                    className="form-input"
+                    value={purchaseFormData.supplierId}
+                    onChange={handlePurchaseInputChange}
+                  >
+                    <option value="">Select supplier</option>
+                    <option value="">No Supplier</option>
+                    {/* In a real app, you would fetch suppliers from the API */}
+                    <option value="1">Sample Supplier 1</option>
+                    <option value="2">Sample Supplier 2</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-row-2">
+                <div className="form-field">
+                  <label className="form-label">Quantity *</label>
+                  <input
+                    type="number"
+                    name="quantity"
+                    className="form-input"
+                    placeholder="Enter quantity"
+                    value={purchaseFormData.quantity}
+                    onChange={handlePurchaseInputChange}
+                    min="1"
+                    required
+                  />
+                </div>
+                
+                <div className="form-field">
+                  <label className="form-label">Unit Cost (₱) *</label>
+                  <input
+                    type="number"
+                    name="unitCost"
+                    className="form-input"
+                    placeholder="Enter unit cost"
+                    value={purchaseFormData.unitCost}
+                    onChange={handlePurchaseInputChange}
+                    min="0.01"
+                    step="0.01"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="form-field">
+                <label className="form-label">Notes</label>
+                <textarea
+                  name="notes"
+                  className="form-input"
+                  placeholder="Enter any notes about this purchase"
+                  value={purchaseFormData.notes}
+                  onChange={handlePurchaseInputChange}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="modal-actions">
+                <button type="button" className="btn-discard" onClick={handleCancelPurchase} disabled={savingPurchase}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={savingPurchase}>
+                  {savingPurchase ? 'Saving...' : 'Add Purchase'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

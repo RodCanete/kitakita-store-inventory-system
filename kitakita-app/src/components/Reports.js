@@ -1,32 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { ReportsApi } from '../api/client';
 import '../App.css';
 
-const profitRevenueData = [
-  { month: 'Sep', Revenue: 30000, Profit: 25000 },
-  { month: 'Oct', Revenue: 35000, Profit: 28000 },
-  { month: 'Nov', Revenue: 60000, Profit: 40000 },
-  { month: 'Dec', Revenue: 50000, Profit: 35000 },
-  { month: 'Jan', Revenue: 45000, Profit: 32000 },
-  { month: 'Feb', Revenue: 55000, Profit: 38000 },
-  { month: 'Mar', Revenue: 60000, Profit: 42000 },
-];
-
-const bestSellingCategories = [
-  { category: 'Alcohol', turnOver: 26000, increaseBy: 3.2 },
-  { category: 'Instant Food', turnOver: 22000, increaseBy: 2.0 },
-  { category: 'Household', turnOver: 22000, increaseBy: 1.5 },
-];
-
-const bestSellingProducts = [
-  { product: 'Tomato', productId: 23567, category: 'Vegetable', remainingQuantity: '225 kg', turnOver: 17000, increaseBy: 2.3 },
-  { product: 'Red Horse', productId: 25831, category: 'Alcohol', remainingQuantity: '100 Bottles', turnOver: 12000, increaseBy: 1.3 },
-  { product: 'Maggi', productId: 56841, category: 'Instant Food', remainingQuantity: '200 Packet', turnOver: 10000, increaseBy: 1.3 },
-  { product: 'Surf', productId: 23567, category: 'Household', remainingQuantity: '125 Packet', turnOver: 9000, increaseBy: 1.0 },
-];
-
-export default function Reports() {
+export default function Reports({ token }) {
   const [chartWidth, setChartWidth] = useState(800);
+  const [reportsData, setReportsData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const updateChartWidth = () => {
@@ -45,9 +26,54 @@ export default function Reports() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+    let isMounted = true;
+
+    const loadReportsData = async () => {
+      console.log('Fetching reports data with token:', token.substring(0, 10) + '...');
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await ReportsApi.getReports(token);
+        console.log('Received reports data:', data);
+        if (isMounted) {
+          setReportsData(data);
+        }
+      } catch (err) {
+        console.error('Error fetching reports data:', err);
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadReportsData();
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
+  const formatCurrency = (value) => {
+    if (!value && value !== 0) return '₱0';
+    return `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const salesOverview = reportsData?.salesOverview;
+  const bestSellingCategories = reportsData?.bestSellingCategories || [];
+  const bestSellingProducts = reportsData?.bestSellingProducts || [];
+  const profitRevenueData = reportsData?.profitRevenueData || [];
+
   return (
     <div className="reports">
       <h1 className="page-title">Reports</h1>
+      
+      {loading && <div className="info-banner">Loading reports data…</div>}
+      {error && <div className="form-error" role="alert">{error}</div>}
 
       {/* Top Section - Overview and Best Selling Category */}
       <div className="reports-top-section">
@@ -57,31 +83,31 @@ export default function Reports() {
           <div className="overview-metrics">
             <div className="overview-metric">
               <div className="overview-metric-label">Total Profit</div>
-              <div className="overview-metric-value">₱21,190</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.totalProfit) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">Revenue</div>
-              <div className="overview-metric-value">₱18,300</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.revenue) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">Sales</div>
-              <div className="overview-metric-value">₱17,432</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.sales) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">Net purchase value</div>
-              <div className="overview-metric-value">₱117,432</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.netPurchaseValue) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">Net sales value</div>
-              <div className="overview-metric-value">₱80,432</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.netSalesValue) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">MoM Profit</div>
-              <div className="overview-metric-value">₱30,432</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.momProfit) : '₱0'}</div>
             </div>
             <div className="overview-metric">
               <div className="overview-metric-label">YoY Profit</div>
-              <div className="overview-metric-value">₱110,432</div>
+              <div className="overview-metric-value">{salesOverview ? formatCurrency(salesOverview.yoyProfit) : '₱0'}</div>
             </div>
           </div>
         </div>
@@ -104,10 +130,15 @@ export default function Reports() {
               {bestSellingCategories.map((item, idx) => (
                 <tr key={idx}>
                   <td>{item.category}</td>
-                  <td>₱{item.turnOver.toLocaleString()}</td>
-                  <td className="increase-positive">+{item.increaseBy}%</td>
+                  <td>{formatCurrency(item.turnOver)}</td>
+                  <td className="increase-positive">+{item.increaseBy?.toFixed(1) || '0.0'}%</td>
                 </tr>
               ))}
+              {!bestSellingCategories.length && !loading && (
+                <tr>
+                  <td colSpan={3} className="muted">No category data available.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -124,10 +155,10 @@ export default function Reports() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
-            <Tooltip />
+            <Tooltip formatter={(value) => formatCurrency(value)} />
             <Legend />
-            <Line type="monotone" dataKey="Revenue" stroke="#0b63e8" strokeWidth={2} />
-            <Line type="monotone" dataKey="Profit" stroke="#f97316" strokeWidth={2} />
+            <Line type="monotone" dataKey="revenue" stroke="#0b63e8" strokeWidth={2} name="Revenue" />
+            <Line type="monotone" dataKey="profit" stroke="#f97316" strokeWidth={2} name="Profit" />
           </LineChart>
         </div>
       </div>
@@ -157,10 +188,15 @@ export default function Reports() {
                   <td>{item.productId}</td>
                   <td>{item.category}</td>
                   <td>{item.remainingQuantity}</td>
-                  <td>₱{item.turnOver.toLocaleString()}</td>
-                  <td className="increase-positive">+{item.increaseBy}%</td>
+                  <td>{formatCurrency(item.turnOver)}</td>
+                  <td className="increase-positive">+{item.increaseBy?.toFixed(1) || '0.0'}%</td>
                 </tr>
               ))}
+              {!bestSellingProducts.length && !loading && (
+                <tr>
+                  <td colSpan={6} className="muted">No product data available.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -168,4 +204,3 @@ export default function Reports() {
     </div>
   );
 }
-
