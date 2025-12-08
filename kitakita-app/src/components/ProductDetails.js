@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../App.css';
-import { ProductsApi } from '../api/client';
+import { ProductsApi, SuppliersApi } from '../api/client';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -19,7 +19,7 @@ const formatDateTime = (value) => {
 export default function ProductDetails({ product, onClose, onEdit, token }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [purchasesData, setPurchasesData] = useState([]);
-  const [adjustmentsData, setAdjustmentsData] = useState([]);
+  const [suppliersData, setSuppliersData] = useState([]);
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -37,6 +37,23 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     if (onEdit) {
       onEdit(product);
       onClose(); // Close the product details modal
+    }
+  };
+
+  // Fetch suppliers when component mounts
+  useEffect(() => {
+    if (token) {
+      fetchSuppliers();
+    }
+  }, [token]);
+
+  const fetchSuppliers = async () => {
+    try {
+      const response = await SuppliersApi.list(token);
+      setSuppliersData(response.content || []);
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+      setSuppliersData([]); // Set to empty array on error
     }
   };
 
@@ -60,15 +77,9 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       console.log('Purchases response:', purchasesResponse);
       setPurchasesData(purchasesResponse || []);
       
-      // Fetch adjustments
-      console.log('Calling ProductsApi.getAdjustments with token:', token ? 'present' : 'missing');
-      const adjustmentsResponse = await ProductsApi.getAdjustments(product.productId, token);
-      console.log('Adjustments response:', adjustmentsResponse);
-      setAdjustmentsData(adjustmentsResponse || []);
-      
-      // For now, we'll generate history data from purchases and adjustments
+      // For now, we'll generate history data from purchases
       // In a real application, this would come from a separate history tracking system
-      const history = generateHistoryFromData(purchasesResponse || [], adjustmentsResponse || []);
+      const history = generateHistoryFromData(purchasesResponse || []);
       setHistoryData(history);
       
       console.log('Successfully fetched product history');
@@ -83,14 +94,13 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       // Fallback to static data on error
       console.log('Falling back to static data');
       setPurchasesData(getStaticPurchasesData());
-      setAdjustmentsData(getStaticAdjustmentsData());
       setHistoryData(getStaticHistoryData());
     } finally {
       setLoading(false);
     }
   };
 
-  const generateHistoryFromData = (purchases, adjustments) => {
+  const generateHistoryFromData = (purchases) => {
     const history = [];
     
     // Add purchase history entries
@@ -102,32 +112,6 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
         action: 'Purchase',
         description: `Purchased ${purchase.quantity} units from ${purchase.supplierName || 'supplier'}`,
         user: 'System'
-      });
-    });
-    
-    // Add adjustment history entries
-    adjustments.forEach(adjustment => {
-      const dateTime = formatDateTime(adjustment.adjustmentDate);
-      let action = 'Stock Adjustment';
-      let description = '';
-      
-      switch (adjustment.adjustmentType) {
-        case 'ADD':
-          description = `Added ${adjustment.quantity} units - ${adjustment.reason || 'Stock adjustment'}`;
-          break;
-        case 'REMOVE':
-          description = `Removed ${adjustment.quantity} units - ${adjustment.reason || 'Stock adjustment'}`;
-          break;
-        default:
-          description = `${adjustment.quantity} units adjusted - ${adjustment.reason || 'Stock adjustment'}`;
-      }
-      
-      history.push({
-        date: dateTime.date,
-        time: dateTime.time,
-        action,
-        description,
-        user: adjustment.performedBy || 'System'
       });
     });
     
@@ -147,20 +131,9 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     { purchaseId: 5, purchaseCode: 'PUR-005', purchaseDate: '2023-09-12', quantity: 35, unitCost: 16, totalCost: 560, supplierName: 'Ronald Martin', status: 'COMPLETED' },
   ];
 
-  const getStaticAdjustmentsData = () => [
-    { adjustmentId: 1, adjustmentDate: '2024-01-18', adjustmentType: 'ADD', quantity: 5, reason: 'Stock correction', performedBy: 'Admin User' },
-    { adjustmentId: 2, adjustmentDate: '2024-01-12', adjustmentType: 'REMOVE', quantity: 3, reason: 'Damaged goods', performedBy: 'Admin User' },
-    { adjustmentId: 3, adjustmentDate: '2024-01-05', adjustmentType: 'ADD', quantity: 10, reason: 'Found in warehouse', performedBy: 'Warehouse Staff' },
-    { adjustmentId: 4, adjustmentDate: '2023-12-28', adjustmentType: 'REMOVE', quantity: 2, reason: 'Expired items', performedBy: 'Admin User' },
-    { adjustmentId: 5, adjustmentDate: '2023-12-15', adjustmentType: 'CORRECTION', quantity: 0, reason: 'Inventory audit', performedBy: 'Admin User' },
-  ];
-
   const getStaticHistoryData = () => [
-    { date: '18/01/24', time: '14:30', action: 'Stock Adjustment', description: 'Added 5 units - Stock correction', user: 'Admin User' },
     { date: '15/01/24', time: '10:15', action: 'Purchase', description: 'Purchased 50 units from Ronald Martin', user: 'Admin User' },
-    { date: '12/01/24', time: '16:45', action: 'Stock Adjustment', description: 'Removed 3 units - Damaged goods', user: 'Admin User' },
     { date: '10/12/23', time: '09:20', action: 'Purchase', description: 'Purchased 30 units from Ronald Martin', user: 'Admin User' },
-    { date: '05/12/23', time: '11:00', action: 'Sale', description: 'Sold 6 units - Sale ID: 7535', user: 'Sales Staff' },
     { date: '05/11/23', time: '13:30', action: 'Purchase', description: 'Purchased 40 units from Ronald Martin', user: 'Admin User' },
     { date: '20/10/23', time: '08:45', action: 'Purchase', description: 'Purchased 25 units from Ronald Martin', user: 'Admin User' },
     { date: '12/09/23', time: '15:20', action: 'Purchase', description: 'Purchased 35 units from Ronald Martin', user: 'Admin User' },
@@ -207,7 +180,7 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       setPurchasesData(prev => [response, ...prev]);
       
       // Regenerate history data
-      const history = generateHistoryFromData([response, ...purchasesData], adjustmentsData);
+      const history = generateHistoryFromData([response, ...purchasesData]);
       setHistoryData(history);
       
       // Close the modal
@@ -257,6 +230,32 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     contactNumber: product.supplierContact || 'N/A'
   };
 
+  // Calculate purchase statistics
+  const calculatePurchaseStats = () => {
+    if (!purchasesData || purchasesData.length === 0) {
+      return {
+        totalPurchases: 0,
+        totalQuantity: 0,
+        totalSpent: 0,
+        averageCost: 0
+      };
+    }
+
+    const totalPurchases = purchasesData.length;
+    const totalQuantity = purchasesData.reduce((sum, purchase) => sum + (purchase.quantity || 0), 0);
+    const totalSpent = purchasesData.reduce((sum, purchase) => sum + (purchase.totalCost || 0), 0);
+    const averageCost = totalPurchases > 0 ? (totalSpent / totalPurchases) : 0;
+
+    return {
+      totalPurchases,
+      totalQuantity,
+      totalSpent: parseFloat(totalSpent.toFixed(2)),
+      averageCost: parseFloat(averageCost.toFixed(2))
+    };
+  };
+
+  const purchaseStats = calculatePurchaseStats();
+
   return (
     <div className="product-details-overlay" onClick={onClose}>
       <div className="product-details-content" onClick={(e) => e.stopPropagation()}>
@@ -293,12 +292,6 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
             onClick={() => setActiveTab('purchases')}
           >
             Purchases
-          </button>
-          <button 
-            className={`product-tab ${activeTab === 'adjustments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('adjustments')}
-          >
-            Adjustments
           </button>
           <button 
             className={`product-tab ${activeTab === 'history' ? 'active' : ''}`}
@@ -382,6 +375,26 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
           {activeTab === 'purchases' && (
             <div className="tab-content-section">
+              {/* Purchase Summary Cards */}
+              <div className="purchase-summary">
+                <div className="purchase-summary-card primary">
+                  <div className="purchase-summary-title">Total Purchases</div>
+                  <div className="purchase-summary-value">{purchaseStats.totalPurchases}</div>
+                </div>
+                <div className="purchase-summary-card success">
+                  <div className="purchase-summary-title">Total Quantity</div>
+                  <div className="purchase-summary-value">{purchaseStats.totalQuantity}</div>
+                </div>
+                <div className="purchase-summary-card warning">
+                  <div className="purchase-summary-title">Total Spent</div>
+                  <div className="purchase-summary-value">₱{purchaseStats.totalSpent.toFixed(2)}</div>
+                </div>
+                <div className="purchase-summary-card">
+                  <div className="purchase-summary-title">Avg. Cost</div>
+                  <div className="purchase-summary-value">₱{purchaseStats.averageCost.toFixed(2)}</div>
+                </div>
+              </div>
+
               <div className="section-header">
                 <h3 className="section-title">Purchase History</h3>
                 <button className="btn-primary" onClick={handleAddPurchase}>
@@ -414,62 +427,21 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                           <td>₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
                           <td>{purchase.supplierName || 'N/A'}</td>
                           <td>
-                            <span className="status-badge completed">{purchase.status?.toLowerCase() === 'completed' ? 'Completed' : purchase.status || 'N/A'}</span>
+                            <span className={`status-badge ${purchase.status?.toLowerCase() || 'pending'}`}>
+                              {purchase.status?.toLowerCase() === 'completed' ? 'Completed' : 
+                               purchase.status?.toLowerCase() === 'cancelled' ? 'Cancelled' : 
+                               purchase.status?.toLowerCase() === 'processing' ? 'Processing' :
+                               purchase.status?.toLowerCase() === 'shipped' ? 'Shipped' :
+                               purchase.status?.toLowerCase() === 'delivered' ? 'Delivered' :
+                               purchase.status?.toLowerCase() === 'returned' ? 'Returned' :
+                               purchase.status || 'Pending'}
+                            </span>
                           </td>
                         </tr>
                       ))}
                       {purchasesData.length === 0 && (
                         <tr>
                           <td colSpan="7" className="text-center">No purchase history found</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'adjustments' && (
-            <div className="tab-content-section">
-              <h3 className="section-title">Stock Adjustments</h3>
-              {loading ? (
-                <div>Loading...</div>
-              ) : (
-                <div className="table-container">
-                  <table className="details-table">
-                    <thead>
-                      <tr>
-                        <th>Adjustment ID</th>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Quantity</th>
-                        <th>Reason</th>
-                        <th>Performed By</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {adjustmentsData.map((adjustment, idx) => (
-                        <tr key={idx}>
-                          <td>{`ADJ-${adjustment.adjustmentId}`}</td>
-                          <td>{formatDate(adjustment.adjustmentDate)}</td>
-                          <td>
-                            <span className={`adjustment-type ${adjustment.adjustmentType?.toLowerCase() || 'correction'}`}>
-                              {adjustment.adjustmentType === 'ADD' ? 'Addition' : 
-                               adjustment.adjustmentType === 'REMOVE' ? 'Removal' : 
-                               adjustment.adjustmentType || 'Correction'}
-                            </span>
-                          </td>
-                          <td className={adjustment.adjustmentType === 'ADD' ? 'positive' : adjustment.adjustmentType === 'REMOVE' ? 'negative' : ''}>
-                            {adjustment.adjustmentType === 'ADD' ? '+' : adjustment.adjustmentType === 'REMOVE' ? '-' : ''}{adjustment.quantity}
-                          </td>
-                          <td>{adjustment.reason || 'N/A'}</td>
-                          <td>{adjustment.performedBy || 'System'}</td>
-                        </tr>
-                      ))}
-                      {adjustmentsData.length === 0 && (
-                        <tr>
-                          <td colSpan="6" className="text-center">No adjustment history found</td>
                         </tr>
                       )}
                     </tbody>
@@ -513,75 +485,98 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       {showPurchaseModal && (
         <div className="modal-overlay" onClick={handleCancelPurchase}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 className="modal-title">Add New Purchase</h2>
+            <div className="purchase-form-header">
+              <h3>Add New Purchase</h3>
+              <p>Fill in the details below to record a new purchase for this product</p>
+            </div>
             
             {purchaseError && <div className="form-error" role="alert">{purchaseError}</div>}
             
-            <form onSubmit={handleSavePurchase} className="product-form">
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Product Name</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={product.productName}
-                    disabled
-                  />
+            <form onSubmit={handleSavePurchase} className="purchase-form">
+              <div className="form-group">
+                <label className="form-group-label">Product Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={product.productName}
+                  disabled
+                />
+              </div>
+              
+              <div className="form-row">
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Supplier <span className="required">*</span></label>
+                    <select
+                      name="supplierId"
+                      className="form-control"
+                      value={purchaseFormData.supplierId}
+                      onChange={handlePurchaseInputChange}
+                      required
+                    >
+                      <option value="">Select supplier</option>
+                      {suppliersData.map((supplier) => (
+                        <option key={supplier.supplierId} value={supplier.supplierId}>
+                          {supplier.supplierName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 
-                <div className="form-field">
-                  <label className="form-label">Supplier (Optional)</label>
-                  <select
-                    name="supplierId"
-                    className="form-input"
-                    value={purchaseFormData.supplierId}
-                    onChange={handlePurchaseInputChange}
-                  >
-                    <option value="">Select supplier</option>
-                    <option value="">No Supplier</option>
-                    {/* In a real app, you would fetch suppliers from the API */}
-                    <option value="1">Sample Supplier 1</option>
-                    <option value="2">Sample Supplier 2</option>
-                  </select>
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Quantity <span className="required">*</span></label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      className="form-control"
+                      placeholder="Enter quantity"
+                      value={purchaseFormData.quantity}
+                      onChange={handlePurchaseInputChange}
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
               
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Quantity *</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    className="form-input"
-                    placeholder="Enter quantity"
-                    value={purchaseFormData.quantity}
-                    onChange={handlePurchaseInputChange}
-                    min="1"
-                    required
-                  />
+              <div className="form-row">
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Unit Cost (₱) <span className="required">*</span></label>
+                    <input
+                      type="number"
+                      name="unitCost"
+                      className="form-control"
+                      placeholder="Enter unit cost"
+                      value={purchaseFormData.unitCost}
+                      onChange={handlePurchaseInputChange}
+                      min="0.01"
+                      step="0.01"
+                      required
+                    />
+                  </div>
                 </div>
                 
-                <div className="form-field">
-                  <label className="form-label">Unit Cost (₱) *</label>
-                  <input
-                    type="number"
-                    name="unitCost"
-                    className="form-input"
-                    placeholder="Enter unit cost"
-                    value={purchaseFormData.unitCost}
-                    onChange={handlePurchaseInputChange}
-                    min="0.01"
-                    step="0.01"
-                    required
-                  />
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Total Cost</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={`₱${(parseFloat(purchaseFormData.quantity || 0) * parseFloat(purchaseFormData.unitCost || 0)).toFixed(2)}`}
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
               
-              <div className="form-field">
-                <label className="form-label">Notes</label>
+              <div className="form-group">
+                <label className="form-group-label">Notes</label>
                 <textarea
                   name="notes"
-                  className="form-input"
+                  className="form-control"
                   placeholder="Enter any notes about this purchase"
                   value={purchaseFormData.notes}
                   onChange={handlePurchaseInputChange}
@@ -589,7 +584,7 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                 />
               </div>
               
-              <div className="modal-actions">
+              <div className="purchase-form-actions">
                 <button type="button" className="btn-discard" onClick={handleCancelPurchase} disabled={savingPurchase}>
                   Cancel
                 </button>

@@ -223,6 +223,7 @@ public class ProductServiceImpl implements ProductService {
                 .categoryName(category != null ? category.getCategoryName() : null)
                 .supplierId(supplier != null ? supplier.getSupplierId() : null)
                 .supplierName(supplier != null ? supplier.getSupplierName() : null)
+                .supplierContact(supplier != null ? supplier.getContactNumber() : null)
                 .buyingPrice(product.getBuyingPrice())
                 .sellingPrice(product.getSellingPrice())
                 .unit(product.getUnit())

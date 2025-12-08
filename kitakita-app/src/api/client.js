@@ -77,6 +77,11 @@ export const ProductsApi = {
     apiRequest(`/api/products/${productId}/purchases`, { method: 'POST', body: payload, token })
 };
 
+export const SuppliersApi = {
+  list: (token) =>
+    apiRequest('/api/suppliers', { token })
+};
+
 export const DashboardApi = {
   summary: (token) => apiRequest('/api/dashboard/summary', { token })
 };

@@ -1580,6 +1580,27 @@ body {
 
 .table-container {
   overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .best-selling-product-card {
@@ -2022,5 +2043,358 @@ body {
   
   .form-row-2 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Product Details - Purchases Table Styles */
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.details-table thead {
+  background: #f8fafc;
+}
+
+.details-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.details-table td {
+  padding: 16px 12px;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+
+.details-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.details-table tbody tr:hover {
+  background: #f0f9ff;
+}
+
+.details-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Status Badges for Purchases */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+.status-badge.completed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.processing {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.shipped {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.status-badge.delivered {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.returned {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+/* Purchase Summary Cards */
+.purchase-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.purchase-summary-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.purchase-summary-title {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.purchase-summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.purchase-summary-card.primary {
+  border-top: 3px solid #0b63e8;
+}
+
+.purchase-summary-card.success {
+  border-top: 3px solid #10b981;
+}
+
+.purchase-summary-card.warning {
+  border-top: 3px solid #f59e0b;
+}
+
+/* Purchase Form Styles */
+.purchase-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.purchase-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.purchase-form-full {
+  grid-column: 1 / -1;
+}
+
+.purchase-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.purchase-form-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.purchase-form-header h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.purchase-form-header p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #0b63e8;
+  box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
+}
+
+.form-control:disabled {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-col {
+  flex: 1;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 6px;
+  display: block;
+}
+
+.required {
+  color: #dc2626;
+}
+
+/* Text Centering for Empty States */
+.text-center {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 24px;
+}
+
+/* History Timeline Styles */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 0;
+}
+
+.history-item {
+  display: flex;
+  gap: 20px;
+  position: relative;
+  padding-left: 30px;
+}
+
+.history-item:before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #0b63e8;
+  border: 3px solid #e1effe;
+  z-index: 1;
+}
+
+.history-item:not(:last-child):after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 20px;
+  width: 2px;
+  height: calc(100% + 4px);
+  background: #e2e8f0;
+}
+
+.history-date-time {
+  min-width: 100px;
+}
+
+.history-date {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.history-time {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.history-content {
+  flex: 1;
+  padding: 4px 0;
+}
+
+.history-action {
+  font-weight: 600;
+  color: #0b63e8;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.history-description {
+  color: #334155;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.history-user {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Responsive adjustments for product details */
+@media (max-width: 768px) {
+  .purchase-form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .details-table th,
+  .details-table td {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+  
+  .status-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  
+  .history-item {
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 40px;
+  }
+  
+  .history-date-time {
+    min-width: auto;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .purchase-summary {
+    grid-template-columns: 1fr 1fr;
   }
 }

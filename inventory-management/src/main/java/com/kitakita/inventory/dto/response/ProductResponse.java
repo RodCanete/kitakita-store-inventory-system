@@ -17,6 +17,7 @@ public class ProductResponse {
     private String categoryName;
     private Integer supplierId;
     private String supplierName;
+    private String supplierContact;
     private BigDecimal buyingPrice;
     private BigDecimal sellingPrice;
     private String unit;
@@ -30,5 +31,3 @@ public class ProductResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
-
-
