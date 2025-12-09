@@ -90,13 +90,6 @@ export default function Layout({ children, currentPage, onNavigate, onLogout, us
           <div className="top-bar-left">
            
           </div>
-          <div className="search-bar">
-            <input 
-              type="text" 
-              placeholder="Search product, supplier, order" 
-              className="search-input"
-            />
-          </div>
           <div className="top-bar-right">
             <button className="icon-button">🔔</button>
             <div className="user-avatar" title={user ? user.fullName : 'User'}>

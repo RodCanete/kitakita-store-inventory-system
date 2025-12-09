@@ -19,15 +19,31 @@ function App() {
   const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   useEffect(() => {
-    // Always start at login page regardless of saved credentials
-    setMode('login');
-    setToken(null);
-    setUser(null);
-    setCurrentPage('dashboard');
+    // Check if user is already logged in (token exists in localStorage)
+    const savedToken = localStorage.getItem('kitakita_token');
+    const savedUser = localStorage.getItem('kitakita_user');
     
-    // Optionally clear saved credentials for a fresh start
-    // localStorage.removeItem('kitakita_token');
-    // localStorage.removeItem('kitakita_user');
+    if (savedToken && savedUser) {
+      try {
+        const userObj = JSON.parse(savedUser);
+        setToken(savedToken);
+        setUser(userObj);
+        setMode('dashboard');
+        setCurrentPage('dashboard');
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        // If there's an error parsing, clear invalid data and go to login
+        localStorage.removeItem('kitakita_token');
+        localStorage.removeItem('kitakita_user');
+        setMode('login');
+      }
+    } else {
+      // No saved credentials, go to login
+      setMode('login');
+      setToken(null);
+      setUser(null);
+      setCurrentPage('dashboard');
+    }
   }, []);
 
   const handleAuthSuccess = (newToken, userObj) => {
