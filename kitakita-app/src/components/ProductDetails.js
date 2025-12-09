@@ -363,11 +363,11 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                 <h3 className="section-title">Supplier Details</h3>
                 <div className="detail-item">
                   <span className="detail-label">Supplier name:</span>
-                  <span className="detail-value">{productData.supplierName}</span>
+                  <span className="detail-value">{productData.supplierName || 'Not specified'}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Contact Number:</span>
-                  <span className="detail-value">{productData.contactNumber}</span>
+                  <span className="detail-value">{productData.contactNumber || 'Not specified'}</span>
                 </div>
               </div>
             </div>

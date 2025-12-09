@@ -1835,10 +1835,11 @@ body {
 .stock-information {
   display: flex;
   gap: 24px;
-  padding: 20px 0;
+  padding: 20px;
   margin: 24px 0;
-  border-top: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .stock-item {
@@ -1861,9 +1862,41 @@ body {
 
 /* Supplier Details Section */
 .supplier-details-section {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
   margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #e2e8f0;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  flex: 1;
+  text-align: left;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+  word-break: break-word;
+  max-width: 60%;
 }
 
 .coming-soon {
