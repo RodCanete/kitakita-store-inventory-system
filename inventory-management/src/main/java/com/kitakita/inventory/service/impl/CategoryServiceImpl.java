@@ -84,11 +84,11 @@ public class CategoryServiceImpl implements CategoryService {
     }
     
     private CategoryResponse mapToResponse(Category category) {
-        CategoryResponse response = new CategoryResponse();
-        response.setCategoryId(category.getCategoryId());
-        response.setCategoryName(category.getCategoryName());
-        response.setDescription(category.getDescription());
-        response.setCreatedAt(category.getCreatedAt());
-        return response;
+        return CategoryResponse.builder()
+                .categoryId(category.getCategoryId())
+                .categoryName(category.getCategoryName())
+                .description(category.getDescription())
+                .createdAt(category.getCreatedAt())
+                .build();
     }
 }
