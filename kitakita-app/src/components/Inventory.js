@@ -45,6 +45,9 @@ export default function Inventory({ token }) {
   const [references, setReferences] = useState({ categories: [], suppliers: [] });
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   // Add common units array for the dropdown
   const commonUnits = [
@@ -213,6 +216,14 @@ export default function Inventory({ token }) {
     return 'in-stock';
   };
 
+  // Filter products
+  const filteredProducts = products.filter(product => {
+    if (categoryFilter && product.categoryId !== parseInt(categoryFilter)) return false;
+    if (statusFilter === 'low' && product.quantity > product.thresholdValue) return false;
+    if (statusFilter === 'in-stock' && product.quantity <= product.thresholdValue) return false;
+    return true;
+  });
+
   return (
     <div className="inventory">
       <h1 className="page-title">Inventory</h1>
@@ -220,25 +231,69 @@ export default function Inventory({ token }) {
 
       <div className="products-section">
         <div className="products-header">
-          <h2>Products</h2>
+          <input
+            type="search"
+            className="search-input-large"
+            placeholder="Search product, supplier, order"
+            value={search}
+            onChange={(e) => {
+              setPage(0);
+              setSearch(e.target.value);
+            }}
+          />
           <div className="products-actions">
-            <input
-              type="search"
-              className="search-input"
-              placeholder="Search product or code"
-              value={search}
-              onChange={(e) => {
-                setPage(0);
-                setSearch(e.target.value);
-              }}
-            />
-            <button className="btn-secondary" onClick={handleDownloadPdf} disabled={downloading}>
-              {downloading ? 'Preparing PDF…' : 'Download PDF'}
+            <button className="btn-primary-icon" onClick={openCreateModal}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Product
             </button>
-            <button className="btn-primary" onClick={openCreateModal}>Add Product</button>
+            <button className="btn-filter" onClick={() => setShowFilters(!showFilters)}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              Filters
+            </button>
+            <button className="btn-secondary-icon" onClick={handleDownloadPdf} disabled={downloading}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              {downloading ? 'Preparing PDF…' : 'Download all'}
+            </button>
           </div>
-
         </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="filters-panel">
+            <div className="filter-group">
+              <label>Category:</label>
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+                <option value="">All Categories</option>
+                {references.categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-group">
+              <label>Status:</label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <option value="">All Status</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low">Low Stock</option>
+              </select>
+            </div>
+            <button className="btn-clear-filters" onClick={() => {
+              setCategoryFilter('');
+              setStatusFilter('');
+            }}>
+              Clear Filters
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div className="info-banner">Loading products…</div>
@@ -247,71 +302,68 @@ export default function Inventory({ token }) {
             <table className="products-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Category</th>
+                  <th>Products</th>
                   <th>Buying Price</th>
-                  <th>Selling Price</th>
                   <th>Quantity</th>
-                  <th>Threshold</th>
+                  <th>Threshold Value</th>
                   <th>Expiry Date</th>
+                  <th>Availability</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <tr key={product.productId}>
                     <td
                       className="product-name-clickable"
                       onClick={() => setSelectedProduct(product)}
-                      style={{ cursor: 'pointer', color: '#0b63e8' }}
+                      style={{ cursor: 'pointer', color: '#0b63e8', fontWeight: '500' }}
                     >
                       {product.productName}
                     </td>
-                    <td>{product.categoryName || '-'}</td>
                     <td>{formatCurrency(product.buyingPrice)}</td>
-                    <td>{formatCurrency(product.sellingPrice)}</td>
                     <td>{product.quantity} {product.unit}</td>
                     <td>{product.thresholdValue} {product.unit}</td>
                     <td>{formatDate(product.expiryDate)}</td>
+                    <td>
+                      <span className={`availability-badge ${getAvailabilityClass(product)}`}>
+                        {product.quantity <= product.thresholdValue ? 'Out of stock' : 'In- stock'}
+                      </span>
+                    </td>
                     <td className="table-actions">
-                      <div className="table-actions-wrapper">
-                        <span className={`availability-badge ${getAvailabilityClass(product)}`}>
-                          {product.quantity <= product.thresholdValue ? 'Low' : 'In stock'}
-                        </span>
-                        <div className="action-buttons">
-                          <button 
-                            className="action-btn-icon edit-btn-icon" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedProduct(null); // Close product details if open
-                              openEditModal(product);
-                            }}
-                            title="Edit product"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M11.333 2.00001C11.5084 1.82465 11.7163 1.68607 11.9447 1.59233C12.1731 1.49859 12.4173 1.45166 12.6637 1.45435C12.9101 1.45704 13.1533 1.50929 13.3788 1.60777C13.6043 1.70625 13.8075 1.84896 13.9762 2.02763C14.1449 2.2063 14.2757 2.40734 14.3615 2.62891C14.4473 2.85048 14.4863 3.08798 14.476 3.32568C14.4657 3.56338 14.4063 3.79648 14.301 4.01134C14.1957 4.2262 14.0466 4.41858 13.8613 4.57734L13.333 5.10568L10.8947 2.66734L11.333 2.00001ZM10 3.33334L12.6667 6.00001L5.33333 13.3333H2.66667V10.6667L10 3.33334Z" fill="currentColor"/>
-                            </svg>
-                          </button>
-                          <button 
-                            className="action-btn-icon delete-btn-icon" 
-                            onClick={() => handleDelete(product.productId)}
-                            title="Delete product"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M5.5 5.5C5.77614 5.5 6 5.72386 6 6V12C6 12.2761 5.77614 12.5 5.5 12.5C5.22386 12.5 5 12.2761 5 12V6C5 5.72386 5.22386 5.5 5.5 5.5Z" fill="currentColor"/>
-                              <path d="M8 5.5C8.27614 5.5 8.5 5.72386 8.5 6V12C8.5 12.2761 8.27614 12.5 8 12.5C7.72386 12.5 7.5 12.2761 7.5 12V6C7.5 5.72386 7.72386 5.5 8 5.5Z" fill="currentColor"/>
-                              <path d="M11 6C11 5.72386 10.7761 5.5 10.5 5.5C10.2239 5.5 10 5.72386 10 6V12C10 12.2761 10.2239 12.5 10.5 12.5C10.7761 12.5 11 12.2761 11 12V6Z" fill="currentColor"/>
-                              <path fillRule="evenodd" clipRule="evenodd" d="M10.5 2C11.0523 2 11.5 2.44772 11.5 3V3.5H13.5C13.7761 3.5 14 3.72386 14 4C14 4.27614 13.7761 4.5 13.5 4.5H13V12.5C13 13.6046 12.1046 14.5 11 14.5H5C3.89543 14.5 3 13.6046 3 12.5V4.5H2.5C2.22386 4.5 2 4.27614 2 4C2 3.72386 2.22386 3.5 2.5 3.5H4.5V3C4.5 2.44772 4.94772 2 5.5 2H10.5ZM5.5 3.5H10.5V3H5.5V3.5ZM4 4.5V12.5C4 12.7761 4.22386 13 4.5 13H11.5C11.7761 13 12 12.7761 12 12.5V4.5H4Z" fill="currentColor"/>
-                            </svg>
-                          </button>
-                        </div>
+                      <div className="action-buttons">
+                        <button 
+                          className="action-btn-icon edit-btn-icon" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProduct(null); // Close product details if open
+                            openEditModal(product);
+                          }}
+                          title="Edit product"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11.333 2.00001C11.5084 1.82465 11.7163 1.68607 11.9447 1.59233C12.1731 1.49859 12.4173 1.45166 12.6637 1.45435C12.9101 1.45704 13.1533 1.50929 13.3788 1.60777C13.6043 1.70625 13.8075 1.84896 13.9762 2.02763C14.1449 2.2063 14.2757 2.40734 14.3615 2.62891C14.4473 2.85048 14.4863 3.08798 14.476 3.32568C14.4657 3.56338 14.4063 3.79648 14.301 4.01134C14.1957 4.2262 14.0466 4.41858 13.8613 4.57734L13.333 5.10568L10.8947 2.66734L11.333 2.00001ZM10 3.33334L12.6667 6.00001L5.33333 13.3333H2.66667V10.6667L10 3.33334Z" fill="currentColor"/>
+                          </svg>
+                        </button>
+                        <button 
+                          className="action-btn-icon delete-btn-icon" 
+                          onClick={() => handleDelete(product.productId)}
+                          title="Delete product"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.5 5.5C5.77614 5.5 6 5.72386 6 6V12C6 12.2761 5.77614 12.5 5.5 12.5C5.22386 12.5 5 12.2761 5 12V6C5 5.72386 5.22386 5.5 5.5 5.5Z" fill="currentColor"/>
+                            <path d="M8 5.5C8.27614 5.5 8.5 5.72386 8.5 6V12C8.5 12.2761 8.27614 12.5 8 12.5C7.72386 12.5 7.5 12.2761 7.5 12V6C7.5 5.72386 7.72386 5.5 8 5.5Z" fill="currentColor"/>
+                            <path d="M11 6C11 5.72386 10.7761 5.5 10.5 5.5C10.2239 5.5 10 5.72386 10 6V12C10 12.2761 10.2239 12.5 10.5 12.5C10.7761 12.5 11 12.2761 11 12V6Z" fill="currentColor"/>
+                            <path fillRule="evenodd" clipRule="evenodd" d="M10.5 2C11.0523 2 11.5 2.44772 11.5 3V3.5H13.5C13.7761 3.5 14 3.72386 14 4C14 4.27614 13.7761 4.5 13.5 4.5H13V12.5C13 13.6046 12.1046 14.5 11 14.5H5C3.89543 14.5 3 13.6046 3 12.5V4.5H2.5C2.22386 4.5 2 4.27614 2 4C2 3.72386 2.22386 3.5 2.5 3.5H4.5V3C4.5 2.44772 4.94772 2 5.5 2H10.5ZM5.5 3.5H10.5V3H5.5V3.5ZM4 4.5V12.5C4 12.7761 4.22386 13 4.5 13H11.5C11.7761 13 12 12.7761 12 12.5V4.5H4Z" fill="currentColor"/>
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
                 {!products.length && (
                   <tr>
-                    <td colSpan={8} className="muted">No products found. Try a different search.</td>
+                    <td colSpan={7} className="muted">No products found. Try a different search.</td>
                   </tr>
                 )}
               </tbody>
