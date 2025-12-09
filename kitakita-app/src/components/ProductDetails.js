@@ -431,8 +431,18 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
   const adjustmentStats = calculateAdjustmentStats();
 
   return (
-    <div className="product-details-overlay" onClick={onClose}>
-      <div className="product-details-content" onClick={(e) => e.stopPropagation()}>
+    <div className="product-details-fullscreen">
+      <div className="product-details-container">
+        {/* Back Button and Header */}
+        <div className="product-details-back">
+          <button className="btn-back" onClick={onClose}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Inventory
+          </button>
+        </div>
+
         {/* Product Header */}
         <div className="product-details-header">
           <h1 className="product-details-title">{productData.name}</h1>
@@ -511,7 +521,20 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                 <div className="product-image-section">
                   <div className="product-image-container">
                     {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={productData.name} className="product-image" />
+                      <img 
+                        src={product.imageUrl} 
+                        alt={productData.name} 
+                        className="product-image"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = `
+                            <div class="product-image-placeholder">
+                              <div class="image-placeholder-icon">📦</div>
+                              <p>Image Load Error</p>
+                            </div>
+                          `;
+                        }}
+                      />
                     ) : (
                       <div className="product-image-placeholder">
                         <div className="image-placeholder-icon">📦</div>
