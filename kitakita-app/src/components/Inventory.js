@@ -46,6 +46,20 @@ export default function Inventory({ token }) {
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
+  // Add common units array for the dropdown
+  const commonUnits = [
+    { value: '', label: 'Select unit' },
+    { value: 'pcs', label: 'Pieces (pcs)' },
+    { value: 'kg', label: 'Kilograms (kg)' },
+    { value: 'g', label: 'Grams (g)' },
+    { value: 'mg', label: 'Milligrams (mg)' },
+    { value: 'L', label: 'Liters (L)' },
+    { value: 'ml', label: 'Milliliters (ml)' },
+    { value: 'box', label: 'Boxes (box)' },
+    { value: 'pack', label: 'Packs (pack)' },
+    { value: 'bottle', label: 'Bottles (bottle)' },
+    { value: 'can', label: 'Cans (can)' }
+  ];
   const loadReferences = async () => {
     if (!token) return;
     try {
@@ -332,178 +346,211 @@ export default function Inventory({ token }) {
             <h2 className="modal-title">{formMode === 'edit' ? 'Edit Product' : 'New Product'}</h2>
 
             <form onSubmit={handleSubmit} className="product-form">
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Product Name</label>
-                  <input
-                    type="text"
-                    name="productName"
-                    className="form-input"
-                    placeholder="Enter product name"
-                    value={formData.productName}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                {formMode === 'edit' && editingProductId && (
+              {/* Basic Information Section */}
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <span className="form-section-icon">📦</span>
+                  Basic Information
+                </h3>
+                <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Product Code</label>
+                    <label className="form-label">Product Name</label>
                     <input
                       type="text"
+                      name="productName"
                       className="form-input"
-                      value={products.find(p => p.productId === editingProductId)?.productCode || 'Auto-generated'}
-                      disabled
+                      placeholder="Enter product name"
+                      value={formData.productName}
+                      onChange={handleInputChange}
+                      required
                     />
                   </div>
-                )}
-              </div>
 
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Category</label>
-                  <select
-                    name="categoryId"
-                    className="form-input"
-                    value={formData.categoryId}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select product category</option>
-                    {references.categories.map((category) => (
-                      <option key={category.id} value={category.id}>{category.label}</option>
-                    ))}
-                  </select>
+                  {formMode === 'edit' && editingProductId && (
+                    <div className="form-field">
+                      <label className="form-label">Product Code</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={products.find(p => p.productId === editingProductId)?.productCode || 'Auto-generated'}
+                        disabled
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div className="form-field">
-                  <label className="form-label">Supplier</label>
-                  <select
-                    name="supplierId"
-                    className="form-input"
-                    value={formData.supplierId}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select supplier (optional)</option>
-                    {references.suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="form-label">Category</label>
+                    <select
+                      name="categoryId"
+                      className="form-input"
+                      value={formData.categoryId}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select product category</option>
+                      {references.categories.map((category) => (
+                        <option key={category.id} value={category.id}>{category.label}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Buying Price</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="buyingPrice"
-                    className="form-input"
-                    value={formData.buyingPrice}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">Selling Price</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="sellingPrice"
-                    className="form-input"
-                    value={formData.sellingPrice}
-                    onChange={handleInputChange}
-                    required
-                  />
+                  <div className="form-field">
+                    <label className="form-label">Supplier</label>
+                    <select
+                      name="supplierId"
+                      className="form-input"
+                      value={formData.supplierId}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select supplier (optional)</option>
+                      {references.suppliers.map((supplier) => (
+                        <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Quantity</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    className="form-input"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">Threshold Value</label>
-                  <input
-                    type="number"
-                    name="thresholdValue"
-                    className="form-input"
-                    value={formData.thresholdValue}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row-2">
-                <div className="form-field">
-                  <label className="form-label">Opening Stock</label>
-                  <input
-                    type="number"
-                    name="openingStock"
-                    className="form-input"
-                    value={formData.openingStock}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">On the Way</label>
-                  <input
-                    type="number"
-                    name="onTheWay"
-                    className="form-input"
-                    value={formData.onTheWay}
-                    onChange={handleInputChange}
-                    required
-                  />
+              {/* Pricing Information Section */}
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <span className="form-section-icon">💰</span>
+                  Pricing Information
+                </h3>
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="form-label">Buying Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="buyingPrice"
+                      className="form-input"
+                      value={formData.buyingPrice}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Selling Price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      name="sellingPrice"
+                      className="form-input"
+                      value={formData.sellingPrice}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="form-row-2">
+              {/* Inventory Information Section */}
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <span className="form-section-icon">📊</span>
+                  Inventory Information
+                </h3>
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="form-label">Quantity</label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      className="form-input"
+                      value={formData.quantity}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Threshold Value</label>
+                    <input
+                      type="number"
+                      name="thresholdValue"
+                      className="form-input"
+                      value={formData.thresholdValue}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="form-label">Opening Stock</label>
+                    <input
+                      type="number"
+                      name="openingStock"
+                      className="form-input"
+                      value={formData.openingStock}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">On the Way</label>
+                    <input
+                      type="number"
+                      name="onTheWay"
+                      className="form-input"
+                      value={formData.onTheWay}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row-2">
+                  <div className="form-field">
+                    <label className="form-label">Unit</label>
+                    <select
+                      name="unit"
+                      className="form-input"
+                      value={formData.unit}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      {commonUnits.map((unitOption) => (
+                        <option key={unitOption.value} value={unitOption.value}>
+                          {unitOption.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Expiry Date</label>
+                    <input
+                      type="date"
+                      name="expiryDate"
+                      className="form-input"
+                      value={formData.expiryDate}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Media Section */}
+              <div className="form-section">
+                <h3 className="form-section-title">
+                  <span className="form-section-icon">📷</span>
+                  Media
+                </h3>
                 <div className="form-field">
-                  <label className="form-label">Unit</label>
+                  <label className="form-label">Image URL</label>
                   <input
                     type="text"
-                    name="unit"
+                    name="imageUrl"
                     className="form-input"
-                    value={formData.unit}
+                    value={formData.imageUrl}
                     onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-label">Expiry Date</label>
-                  <input
-                    type="date"
-                    name="expiryDate"
-                    className="form-input"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
+                    placeholder="Enter image URL (optional)"
                   />
                 </div>
               </div>
-
-              <div className="form-field">
-                <label className="form-label">Image URL</label>
-                <input
-                  type="text"
-                  name="imageUrl"
-                  className="form-input"
-                  value={formData.imageUrl}
-                  onChange={handleInputChange}
-                />
-              </div>
-
               <div className="modal-actions">
                 <button type="button" className="btn-discard" onClick={handleDiscard}>
                   Cancel
