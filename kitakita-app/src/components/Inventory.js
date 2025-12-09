@@ -224,7 +224,7 @@ export default function Inventory({ token }) {
           <div className="products-actions">
             <input
               type="search"
-              className="input search-input"
+              className="search-input"
               placeholder="Search product or code"
               value={search}
               onChange={(e) => {

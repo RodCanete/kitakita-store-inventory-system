@@ -97,7 +97,7 @@ body {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: 12px 0;
+  margin: 16px 0;
 }
 
 .divider::before, .divider::after {
@@ -187,10 +187,7 @@ body {
   font-size: 14px;
   transition: background 0.2s;
   width: 100%;
-  margin-bottom: 12px;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 12px 14px;
+  margin: 8px 0 16px 0;
 }
 
 .btn-primary:hover {
@@ -246,6 +243,7 @@ body {
   gap: 10px;
   cursor: pointer;
   font-size: 15px;
+  margin-bottom: 16px;
 }
 
 .g-icon {
@@ -258,7 +256,7 @@ body {
 
 .footer-text {
   text-align: center;
-  margin-top: 14px;
+  margin-top: 16px;
   color: #6b7280;
   font-size: 15px;
 }
@@ -995,18 +993,48 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .products-header h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
   margin: 0;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 24px;
 }
 
 .products-actions {
   display: flex;
   gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  transition: all 0.2s;
+  min-width: 280px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #0b63e8;
+  box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
 }
 
 .products-table-container {
@@ -1020,20 +1048,30 @@ body {
 }
 
 .products-table thead {
-  background: #f9fafb;
+  background: #f1f5f9;
+}
+
+.products-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.products-table th:last-child {
+  border-top-right-radius: 8px;
 }
 
 .products-table th {
-  padding: 12px;
+  padding: 16px 12px;
   text-align: left;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #64748b;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 2px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .products-table td {
-  padding: 12px;
+  padding: 16px 12px;
   font-size: 14px;
   color: #1e293b;
   border-bottom: 1px solid #e2e8f0;
@@ -1041,7 +1079,8 @@ body {
 }
 
 .products-table tbody tr:hover {
-  background: #f9fafb;
+  background: #f1f5f9;
+  transition: background-color 0.2s ease;
 }
 
 .product-name-clickable {
@@ -1054,10 +1093,12 @@ body {
 }
 
 .availability-badge {
-  padding: 4px 12px;
-  border-radius: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .availability-badge.in-stock {
@@ -1078,8 +1119,8 @@ body {
 .table-actions-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
-  justify-content: space-between;
+  gap: 16px;
+  justify-content: flex-end;
 }
 
 .action-buttons {
@@ -1256,7 +1297,19 @@ body {
   justify-content: center;
   align-items: center;
   gap: 16px;
-  margin-top: 24px;
+  margin: 32px 0;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.pagination-info {
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  min-width: 200px;
+  text-align: center;
 }
 
 .pagination-btn {
@@ -1278,11 +1331,6 @@ body {
 .pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: #64748b;
 }
 
 /* Modal Styles */
@@ -1965,7 +2013,8 @@ body {
   
   .products-actions .btn-primary,
   .products-actions .btn-secondary {
-    width: 100%;
+    width: auto;
+    min-width: 120px;
   }
 }
 
@@ -2096,7 +2145,8 @@ body {
   
   .suppliers-actions .btn-primary,
   .suppliers-actions .btn-secondary {
-    width: 100%;
+    width: auto;
+    min-width: 120px;
   }
   
   .form-row-2 {
