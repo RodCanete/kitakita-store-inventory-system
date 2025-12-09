@@ -53,6 +53,13 @@ export default function Layout({ children, currentPage, onNavigate, onLogout, us
             Suppliers
           </button>
           <button 
+            className={`nav-item ${currentPage === 'categories' ? 'active' : ''}`}
+            onClick={() => onNavigate('categories')}
+          >
+            <span className="nav-icon">🏷️</span>
+            Categories
+          </button>
+          <button 
             className={`nav-item ${currentPage === 'sales' ? 'active' : ''}`}
             onClick={() => onNavigate('sales')}
           >

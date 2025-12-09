@@ -8,6 +8,7 @@ import Inventory from './components/Inventory';
 import Reports from './components/Reports';
 import Sales from './components/Sales';
 import Suppliers from './components/Suppliers';
+import Categories from './components/Categories';
 
 function App() {
   const [mode, setMode] = useState('login');
@@ -75,6 +76,8 @@ function App() {
         return <Sales {...pageProps} />;
       case 'suppliers':
         return <Suppliers {...pageProps} />;
+      case 'categories':
+        return <Categories {...pageProps} />;
       case 'settings':
         return <div className="coming-soon">Coming Soon: {currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</div>;
       default:

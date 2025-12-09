@@ -2506,3 +2506,124 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* Categories Styles */
+.categories {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.categories-section {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.categories-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.categories-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.categories-table-container {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.categories-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.categories-table thead {
+  background: #f1f5f9;
+}
+
+.categories-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.categories-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.categories-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.categories-table td {
+  padding: 16px 12px;
+  font-size: 14px;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.categories-table tbody tr:hover {
+  background: #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.text-center {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .categories-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .categories-actions {
+    flex-direction: column;
+  }
+  
+  .categories-actions .btn-primary {
+    width: auto;
+    min-width: 120px;
+  }
+  
+  .categories-table th,
+  .categories-table td {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+}

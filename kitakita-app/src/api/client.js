@@ -79,6 +79,17 @@ export const ProductsApi = {
     apiRequest(`/api/products/${productId}/adjustments`, { method: 'POST', body: payload, token })
 };
 
+export const CategoriesApi = {
+  list: (token) =>
+    apiRequest('/api/categories', { token }),
+  create: (payload, token) =>
+    apiRequest('/api/categories', { method: 'POST', body: payload, token }),
+  update: (categoryId, payload, token) =>
+    apiRequest(`/api/categories/${categoryId}`, { method: 'PUT', body: payload, token }),
+  remove: (categoryId, token) =>
+    apiRequest(`/api/categories/${categoryId}`, { method: 'DELETE', token })
+};
+
 export const SuppliersApi = {
   list: (token) =>
     apiRequest('/api/suppliers', { token })
