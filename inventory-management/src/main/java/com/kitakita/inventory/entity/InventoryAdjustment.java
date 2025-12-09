@@ -1,6 +1,7 @@
 package com.kitakita.inventory.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Convert;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -23,8 +24,8 @@ public class InventoryAdjustment {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "adjustment_type", nullable = false, columnDefinition = "ENUM('add', 'remove', 'correction')")
+    @Convert(converter = com.kitakita.inventory.converter.AdjustmentTypeEnumConverter.class)
+    @Column(name = "adjustment_type", nullable = false)
     private AdjustmentType adjustmentType;
 
     @Column(nullable = false)

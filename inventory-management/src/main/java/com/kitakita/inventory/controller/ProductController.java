@@ -1,6 +1,7 @@
 package com.kitakita.inventory.controller;
 
 import com.kitakita.inventory.dto.request.ProductRequest;
+import com.kitakita.inventory.dto.request.InventoryAdjustmentRequest;
 import com.kitakita.inventory.dto.request.PurchaseRequest;
 import com.kitakita.inventory.dto.response.AdjustmentHistoryResponse;
 import com.kitakita.inventory.dto.response.PagedResponse;
@@ -98,6 +99,14 @@ public class ProductController {
     public List<AdjustmentHistoryResponse> getProductAdjustments(@PathVariable Integer productId) {
         return productHistoryService.getProductAdjustments(productId);
     }
+
+    @PostMapping("/{productId}/adjustments")
+    public AdjustmentHistoryResponse createAdjustment(@PathVariable Integer productId, @Valid @RequestBody InventoryAdjustmentRequest request) {
+        // Ensure the productId in the path matches the productId in the request
+        request.setProductId(productId);
+        return productHistoryService.createAdjustment(request);
+    }
+
 
     @PostMapping("/{productId}/purchases")
     public PurchaseHistoryResponse createPurchase(@PathVariable Integer productId, @Valid @RequestBody PurchaseRequest request) {

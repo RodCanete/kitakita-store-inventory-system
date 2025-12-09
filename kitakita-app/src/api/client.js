@@ -74,7 +74,9 @@ export const ProductsApi = {
   getAdjustments: (productId, token) =>
     apiRequest(`/api/products/${productId}/adjustments`, { token }),
   createPurchase: (productId, payload, token) =>
-    apiRequest(`/api/products/${productId}/purchases`, { method: 'POST', body: payload, token })
+    apiRequest(`/api/products/${productId}/purchases`, { method: 'POST', body: payload, token }),
+  createAdjustment: (productId, payload, token) =>
+    apiRequest(`/api/products/${productId}/adjustments`, { method: 'POST', body: payload, token })
 };
 
 export const SuppliersApi = {

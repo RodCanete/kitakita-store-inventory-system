@@ -21,8 +21,10 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
   const [purchasesData, setPurchasesData] = useState([]);
   const [suppliersData, setSuppliersData] = useState([]);
   const [historyData, setHistoryData] = useState([]);
+  const [adjustmentsData, setAdjustmentsData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
   const [purchaseFormData, setPurchaseFormData] = useState({
     productId: '',
     supplierId: '',
@@ -30,8 +32,16 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     unitCost: '',
     notes: ''
   });
+  const [adjustmentFormData, setAdjustmentFormData] = useState({
+    productId: '',
+    adjustmentType: 'ADD',
+    quantity: '',
+    reason: ''
+  });
   const [savingPurchase, setSavingPurchase] = useState(false);
+  const [savingAdjustment, setSavingAdjustment] = useState(false);
   const [purchaseError, setPurchaseError] = useState(null);
+  const [adjustmentError, setAdjustmentError] = useState(null);
   
   const handleEdit = () => {
     if (onEdit) {
@@ -77,9 +87,15 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       console.log('Purchases response:', purchasesResponse);
       setPurchasesData(purchasesResponse || []);
       
+      // Fetch adjustments
+      console.log('Calling ProductsApi.getAdjustments with token:', token ? 'present' : 'missing');
+      const adjustmentsResponse = await ProductsApi.getAdjustments(product.productId, token);
+      console.log('Adjustments response:', adjustmentsResponse);
+      setAdjustmentsData(adjustmentsResponse || []);
+      
       // For now, we'll generate history data from purchases
       // In a real application, this would come from a separate history tracking system
-      const history = generateHistoryFromData(purchasesResponse || []);
+      const history = generateHistoryFromData(purchasesResponse || [], adjustmentsResponse || []);
       setHistoryData(history);
       
       console.log('Successfully fetched product history');
@@ -91,16 +107,22 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       
-      // Fallback to static data on error
-      console.log('Falling back to static data');
-      setPurchasesData(getStaticPurchasesData());
-      setHistoryData(getStaticHistoryData());
+      // Check if it's a specific error we can handle
+      if (error.message) {
+        console.error('Specific error message:', error.message);
+      }
+      
+      // Instead of falling back to static data, we'll show an empty state
+      console.log('Setting empty data due to error');
+      setPurchasesData([]);
+      setAdjustmentsData([]);
+      setHistoryData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateHistoryFromData = (purchases) => {
+  const generateHistoryFromData = (purchases, adjustments) => {
     const history = [];
     
     // Add purchase history entries
@@ -115,6 +137,20 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       });
     });
     
+    // Add adjustment history entries
+    adjustments.forEach(adjustment => {
+      const dateTime = formatDateTime(adjustment.adjustmentDate);
+      const actionText = adjustment.adjustmentType === 'ADD' ? 'Added' : 
+                        adjustment.adjustmentType === 'REMOVE' ? 'Removed' : 'Corrected';
+      history.push({
+        date: dateTime.date,
+        time: dateTime.time,
+        action: `Adjustment (${actionText})`,
+        description: `${actionText} ${adjustment.quantity} units. Reason: ${adjustment.reason || 'N/A'}`,
+        user: adjustment.performedBy || 'System'
+      });
+    });
+    
     // Sort by date descending
     return history.sort((a, b) => {
       const dateA = new Date(`${a.date} ${a.time}`);
@@ -123,21 +159,11 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     });
   };
 
-  const getStaticPurchasesData = () => [
-    { purchaseId: 1, purchaseCode: 'PUR-001', purchaseDate: '2024-01-15', quantity: 50, unitCost: 16, totalCost: 800, supplierName: 'Ronald Martin', status: 'COMPLETED' },
-    { purchaseId: 2, purchaseCode: 'PUR-002', purchaseDate: '2023-12-10', quantity: 30, unitCost: 15, totalCost: 450, supplierName: 'Ronald Martin', status: 'COMPLETED' },
-    { purchaseId: 3, purchaseCode: 'PUR-003', purchaseDate: '2023-11-05', quantity: 40, unitCost: 16, totalCost: 640, supplierName: 'Ronald Martin', status: 'COMPLETED' },
-    { purchaseId: 4, purchaseCode: 'PUR-004', purchaseDate: '2023-10-20', quantity: 25, unitCost: 15, totalCost: 375, supplierName: 'Ronald Martin', status: 'COMPLETED' },
-    { purchaseId: 5, purchaseCode: 'PUR-005', purchaseDate: '2023-09-12', quantity: 35, unitCost: 16, totalCost: 560, supplierName: 'Ronald Martin', status: 'COMPLETED' },
-  ];
+  const getStaticPurchasesData = () => [];
 
-  const getStaticHistoryData = () => [
-    { date: '15/01/24', time: '10:15', action: 'Purchase', description: 'Purchased 50 units from Ronald Martin', user: 'Admin User' },
-    { date: '10/12/23', time: '09:20', action: 'Purchase', description: 'Purchased 30 units from Ronald Martin', user: 'Admin User' },
-    { date: '05/11/23', time: '13:30', action: 'Purchase', description: 'Purchased 40 units from Ronald Martin', user: 'Admin User' },
-    { date: '20/10/23', time: '08:45', action: 'Purchase', description: 'Purchased 25 units from Ronald Martin', user: 'Admin User' },
-    { date: '12/09/23', time: '15:20', action: 'Purchase', description: 'Purchased 35 units from Ronald Martin', user: 'Admin User' },
-  ];
+  const getStaticAdjustmentsData = () => [];
+
+  const getStaticHistoryData = () => [];
 
   const handlePurchaseInputChange = (e) => {
     const { name, value } = e.target;
@@ -179,8 +205,23 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       // Add the new purchase to the list
       setPurchasesData(prev => [response, ...prev]);
       
+      // Update the product quantity (add purchased quantity to current quantity)
+      const purchaseQuantity = parseInt(purchaseFormData.quantity) || 0;
+      const newQuantity = (product.quantity || 0) + purchaseQuantity;
+      
+      // Update the product with the new quantity
+      const updatedProduct = {
+        ...product,
+        quantity: newQuantity
+      };
+      
+      // Notify parent component about the product update if onEdit exists
+      if (onEdit) {
+        onEdit(updatedProduct);
+      }
+      
       // Regenerate history data
-      const history = generateHistoryFromData([response, ...purchasesData]);
+      const history = generateHistoryFromData([response, ...purchasesData], adjustmentsData);
       setHistoryData(history);
       
       // Close the modal
@@ -211,6 +252,112 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       quantity: '',
       unitCost: '',
       notes: ''
+    });
+  };
+
+  const handleAdjustmentInputChange = (e) => {
+    const { name, value } = e.target;
+    setAdjustmentFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddAdjustment = () => {
+    setAdjustmentFormData({
+      productId: product.productId,
+      adjustmentType: 'ADD',
+      quantity: '',
+      reason: ''
+    });
+    setShowAdjustmentModal(true);
+  };
+
+  const handleSaveAdjustment = async (e) => {
+    e.preventDefault();
+    if (!product || !token) return;
+    
+    setSavingAdjustment(true);
+    setAdjustmentError(null);
+    
+    try {
+      const adjustmentData = {
+        productId: product.productId,
+        adjustmentType: adjustmentFormData.adjustmentType,
+        quantity: parseInt(adjustmentFormData.quantity),
+        reason: adjustmentFormData.reason
+      };
+      
+      const response = await ProductsApi.createAdjustment(product.productId, adjustmentData, token);
+      
+      // Add the new adjustment to the list
+      setAdjustmentsData(prev => [response, ...prev]);
+      
+      // Update the product quantity based on the adjustment type
+      let newQuantity = product.quantity || 0;
+      const adjustmentQuantity = parseInt(adjustmentFormData.quantity) || 0;
+      
+      switch (adjustmentFormData.adjustmentType) {
+        case 'ADD':
+          newQuantity += adjustmentQuantity;
+          break;
+        case 'REMOVE':
+          newQuantity -= adjustmentQuantity;
+          break;
+        case 'CORRECTION':
+          newQuantity = adjustmentQuantity;
+          break;
+        default:
+          break;
+      }
+      
+      // Update the product with the new quantity
+      const updatedProduct = {
+        ...product,
+        quantity: newQuantity
+      };
+      
+      // Notify parent component about the product update if onEdit exists
+      if (onEdit) {
+        onEdit(updatedProduct);
+      }
+      
+      // Update the product state locally
+      // Note: This won't persist beyond this component unless the parent updates its state
+      
+      // Regenerate history data
+      const history = generateHistoryFromData(purchasesData, [response, ...adjustmentsData]);
+      setHistoryData(history);
+      
+      // Re-fetch the history to ensure consistency
+      fetchProductHistory();
+      
+      // Close the modal
+      setShowAdjustmentModal(false);
+      
+      // Reset form
+      setAdjustmentFormData({
+        productId: product.productId,
+        adjustmentType: 'ADD',
+        quantity: '',
+        reason: ''
+      });
+    } catch (error) {
+      console.error('Error creating adjustment:', error);
+      setAdjustmentError(error.message || 'Failed to create adjustment');
+    } finally {
+      setSavingAdjustment(false);
+    }
+  };
+
+  const handleCancelAdjustment = () => {
+    setShowAdjustmentModal(false);
+    setAdjustmentError(null);
+    setAdjustmentFormData({
+      productId: product.productId,
+      adjustmentType: 'ADD',
+      quantity: '',
+      reason: ''
     });
   };
 
@@ -256,6 +403,33 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
   const purchaseStats = calculatePurchaseStats();
 
+  // Calculate adjustment statistics
+  const calculateAdjustmentStats = () => {
+    if (!adjustmentsData || adjustmentsData.length === 0) {
+      return {
+        totalAdjustments: 0,
+        totalAdded: 0,
+        totalRemoved: 0
+      };
+    }
+
+    const totalAdjustments = adjustmentsData.length;
+    const totalAdded = adjustmentsData
+      .filter(adj => adj.adjustmentType === 'ADD')
+      .reduce((sum, adj) => sum + (adj.quantity || 0), 0);
+    const totalRemoved = adjustmentsData
+      .filter(adj => adj.adjustmentType === 'REMOVE' || adj.adjustmentType === 'CORRECTION')
+      .reduce((sum, adj) => sum + (adj.quantity || 0), 0);
+
+    return {
+      totalAdjustments,
+      totalAdded,
+      totalRemoved
+    };
+  };
+
+  const adjustmentStats = calculateAdjustmentStats();
+
   return (
     <div className="product-details-overlay" onClick={onClose}>
       <div className="product-details-content" onClick={(e) => e.stopPropagation()}>
@@ -292,6 +466,12 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
             onClick={() => setActiveTab('purchases')}
           >
             Purchases
+          </button>
+          <button 
+            className={`product-tab ${activeTab === 'adjustments' ? 'active' : ''}`}
+            onClick={() => setActiveTab('adjustments')}
+          >
+            Adjustments
           </button>
           <button 
             className={`product-tab ${activeTab === 'history' ? 'active' : ''}`}
@@ -451,6 +631,72 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
             </div>
           )}
 
+          {activeTab === 'adjustments' && (
+            <div className="tab-content-section">
+              {/* Adjustment Summary Cards */}
+              <div className="adjustment-summary">
+                <div className="adjustment-summary-card primary">
+                  <div className="adjustment-summary-title">Total Adjustments</div>
+                  <div className="adjustment-summary-value">{adjustmentStats.totalAdjustments}</div>
+                </div>
+                <div className="adjustment-summary-card success">
+                  <div className="adjustment-summary-title">Total Added</div>
+                  <div className="adjustment-summary-value">{adjustmentStats.totalAdded}</div>
+                </div>
+                <div className="adjustment-summary-card warning">
+                  <div className="adjustment-summary-title">Total Removed</div>
+                  <div className="adjustment-summary-value">{adjustmentStats.totalRemoved}</div>
+                </div>
+              </div>
+
+              <div className="section-header">
+                <h3 className="section-title">Adjustment History</h3>
+                <button className="btn-primary" onClick={handleAddAdjustment}>
+                  Add New Adjustment
+                </button>
+              </div>
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                <div className="table-container">
+                  <table className="details-table">
+                    <thead>
+                      <tr>
+                        <th>Adjustment ID</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Reason</th>
+                        <th>Performed By</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {adjustmentsData.map((adjustment, idx) => (
+                        <tr key={idx}>
+                          <td>{adjustment.adjustmentId}</td>
+                          <td>{formatDate(adjustment.adjustmentDate)}</td>
+                          <td>
+                            <span className={`status-badge ${adjustment.adjustmentType?.toLowerCase() || 'info'}`}>
+                              {adjustment.adjustmentType}
+                            </span>
+                          </td>
+                          <td>{adjustment.quantity}</td>
+                          <td>{adjustment.reason || 'N/A'}</td>
+                          <td>{adjustment.performedBy || 'System'}</td>
+                        </tr>
+                      ))}
+                      {adjustmentsData.length === 0 && (
+                        <tr>
+                          <td colSpan="6" className="text-center">No adjustment history found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'history' && (
             <div className="tab-content-section">
               <h3 className="section-title">Activity History</h3>
@@ -590,6 +836,88 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                 </button>
                 <button type="submit" className="btn-primary" disabled={savingPurchase}>
                   {savingPurchase ? 'Saving...' : 'Add Purchase'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Adjustment Modal */}
+      {showAdjustmentModal && (
+        <div className="modal-overlay" onClick={handleCancelAdjustment}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="purchase-form-header">
+              <h3>Add New Adjustment</h3>
+              <p>Fill in the details below to record a new adjustment for this product</p>
+            </div>
+            
+            {adjustmentError && <div className="form-error" role="alert">{adjustmentError}</div>}
+            
+            <form onSubmit={handleSaveAdjustment} className="purchase-form">
+              <div className="form-group">
+                <label className="form-group-label">Product Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={product.productName}
+                  disabled
+                />
+              </div>
+              
+              <div className="form-row">
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Adjustment Type <span className="required">*</span></label>
+                    <select
+                      name="adjustmentType"
+                      className="form-control"
+                      value={adjustmentFormData.adjustmentType}
+                      onChange={handleAdjustmentInputChange}
+                      required
+                    >
+                      <option value="ADD">Add Stock</option>
+                      <option value="REMOVE">Remove Stock</option>
+                      <option value="CORRECTION">Correction</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="form-col">
+                  <div className="form-group">
+                    <label className="form-group-label">Quantity <span className="required">*</span></label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      className="form-control"
+                      placeholder="Enter quantity"
+                      value={adjustmentFormData.quantity}
+                      onChange={handleAdjustmentInputChange}
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-group-label">Reason</label>
+                <textarea
+                  name="reason"
+                  className="form-control"
+                  placeholder="Enter reason for adjustment"
+                  value={adjustmentFormData.reason}
+                  onChange={handleAdjustmentInputChange}
+                  rows="3"
+                />
+              </div>
+              
+              <div className="purchase-form-actions">
+                <button type="button" className="btn-discard" onClick={handleCancelAdjustment} disabled={savingAdjustment}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={savingAdjustment}>
+                  {savingAdjustment ? 'Saving...' : 'Add Adjustment'}
                 </button>
               </div>
             </form>
