@@ -71,6 +71,16 @@ function App() {
     setCurrentPage('dashboard'); // Reset to default page after logout
   };
 
+  const handleDeleteAccount = async () => {
+    // Clear local storage and logout
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('kitakita_token');
+    localStorage.removeItem('kitakita_user');
+    setMode('login');
+    setCurrentPage('dashboard');
+  };
+
   const handleNavigate = (page) => {
     setCurrentPage(page);
   };
@@ -96,7 +106,7 @@ function App() {
       case 'categories':
         return <Categories {...pageProps} />;
       case 'settings':
-        return <Settings {...pageProps} />;
+        return <Settings {...pageProps} onDeleteAccount={handleDeleteAccount} />;
       default:
         return <Dashboard {...pageProps} />;
     }

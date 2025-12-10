@@ -1,236 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import '../App.css';
 
-export default function Settings({ token, user }) {
-  const [profileData, setProfileData] = useState({
-    fullName: '',
-    email: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+export default function Settings({ user, token, onDeleteAccount }) {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setProfileData({
-        fullName: user.fullName || '',
-        email: user.email || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!token || !user) return;
+    
+    setDeleting(true);
+    try {
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiBase}/api/users/${user.userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-    }
-  }, [user]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear message when user starts typing
-    if (message.text) {
-      setMessage({ type: '', text: '' });
-    }
-  };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    if (!token) return;
-
-    setSaving(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      // In a real app, this would call an API to update the profile
-      // For now, we'll just show a success message
-      setTimeout(() => {
-        setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        setSaving(false);
-      }, 500);
+      if (response.ok || response.status === 204) {
+        // Call the parent handler to handle logout and cleanup
+        if (onDeleteAccount) {
+          onDeleteAccount();
+        }
+      } else {
+        console.error('Failed to delete account');
+        alert('Failed to delete account. Please try again.');
+        setDeleting(false);
+        setShowDeleteModal(false);
+      }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
-      setSaving(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (!token) return;
-
-    if (profileData.newPassword !== profileData.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match.' });
-      return;
-    }
-
-    if (profileData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters long.' });
-      return;
-    }
-
-    setSaving(true);
-    setMessage({ type: '', text: '' });
-
-    try {
-      // In a real app, this would call an API to change the password
-      // For now, we'll just show a success message
-      setTimeout(() => {
-        setMessage({ type: 'success', text: 'Password changed successfully!' });
-        setProfileData(prev => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        }));
-        setSaving(false);
-      }, 500);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
-      setSaving(false);
+      console.error('Error deleting account:', error);
+      alert('An error occurred while deleting your account. Please try again.');
+      setDeleting(false);
+      setShowDeleteModal(false);
     }
   };
 
   return (
-    <div className="settings">
+    <div className="settings-simple">
       <h1 className="page-title">Settings</h1>
-
-      {message.text && (
-        <div className={message.type === 'success' ? 'form-success' : 'form-error'} role="alert">
-          {message.text}
-        </div>
-      )}
-
-      <div className="settings-container">
-        {/* Profile Settings */}
-        <div className="settings-section">
-          <div className="settings-section-header">
-            <h2 className="settings-section-title">Profile Information</h2>
-            <p className="settings-section-description">Update your account profile information</p>
-          </div>
+      
+      <div className="settings-simple-container">
+        <div className="settings-simple-section">
+          <h2 className="settings-simple-title">Account Details</h2>
           
-          <form onSubmit={handleUpdateProfile} className="settings-form">
-            <div className="form-field">
-              <label className="form-label">Full Name</label>
-              <input
-                type="text"
-                name="fullName"
-                className="form-input"
-                placeholder="Enter your full name"
-                value={profileData.fullName}
-                onChange={handleInputChange}
-                required
-              />
+          <div className="settings-simple-list">
+            <div className="settings-simple-item">
+              <div className="settings-simple-label">Full Name</div>
+              <div className="settings-simple-value">{user?.fullName || 'N/A'}</div>
             </div>
-
-            <div className="form-field">
-              <label className="form-label">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                className="form-input"
-                placeholder="Enter your email"
-                value={profileData.email}
-                onChange={handleInputChange}
-                required
-                disabled
-              />
-              <small className="form-hint">Email cannot be changed</small>
+            
+            <div className="settings-simple-item">
+              <div className="settings-simple-label">Email</div>
+              <div className="settings-simple-value">{user?.email || 'N/A'}</div>
             </div>
-
-            <div className="settings-form-actions">
-              <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+            
+            <div className="settings-simple-item">
+              <div className="settings-simple-label">User ID</div>
+              <div className="settings-simple-value">#{user?.userId || 'N/A'}</div>
             </div>
-          </form>
-        </div>
-
-        {/* Password Settings */}
-        <div className="settings-section">
-          <div className="settings-section-header">
-            <h2 className="settings-section-title">Change Password</h2>
-            <p className="settings-section-description">Update your password to keep your account secure</p>
+            
+            <div className="settings-simple-item">
+              <div className="settings-simple-label">Role</div>
+              <div className="settings-simple-value">{user?.role || 'ROLE_USER'}</div>
+            </div>
+            
+            <div className="settings-simple-item">
+              <div className="settings-simple-label">Status</div>
+              <div className="settings-simple-value status-active">
+                Active
+              </div>
+            </div>
           </div>
-          
-          <form onSubmit={handleChangePassword} className="settings-form">
-            <div className="form-field">
-              <label className="form-label">Current Password</label>
-              <input
-                type="password"
-                name="currentPassword"
-                className="form-input"
-                placeholder="Enter current password"
-                value={profileData.currentPassword}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
 
-            <div className="form-field">
-              <label className="form-label">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                className="form-input"
-                placeholder="Enter new password"
-                value={profileData.newPassword}
-                onChange={handleInputChange}
-                required
-                minLength="6"
-              />
-              <small className="form-hint">Password must be at least 6 characters long</small>
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">Confirm New Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                className="form-input"
-                placeholder="Confirm new password"
-                value={profileData.confirmPassword}
-                onChange={handleInputChange}
-                required
-                minLength="6"
-              />
-            </div>
-
-            <div className="settings-form-actions">
-              <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? 'Changing...' : 'Change Password'}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Account Information */}
-        <div className="settings-section">
-          <div className="settings-section-header">
-            <h2 className="settings-section-title">Account Information</h2>
-            <p className="settings-section-description">View your account details</p>
-          </div>
-          
-          <div className="account-info">
-            <div className="account-info-item">
-              <span className="account-info-label">User ID:</span>
-              <span className="account-info-value">#{user?.userId || 'N/A'}</span>
-            </div>
-            <div className="account-info-item">
-              <span className="account-info-label">Role:</span>
-              <span className="account-info-value">{user?.role || 'ROLE_USER'}</span>
-            </div>
-            <div className="account-info-item">
-              <span className="account-info-label">Account Status:</span>
-              <span className={`account-info-value ${user?.isActive ? 'status-active' : 'status-inactive'}`}>
-                {user?.isActive ? 'Active' : 'Inactive'}
-              </span>
-            </div>
+          <div className="settings-simple-actions">
+            <button 
+              className="btn-delete-account" 
+              onClick={handleDeleteClick}
+              type="button"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete Account
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={handleCancelDelete}>
+          <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-modal-header">
+              <div className="delete-modal-icon">⚠️</div>
+              <h3 className="delete-modal-title">Delete Account</h3>
+              <p className="delete-modal-message">
+                Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.
+              </p>
+            </div>
+            
+            <div className="delete-modal-actions">
+              <button 
+                type="button" 
+                className="btn-cancel-delete" 
+                onClick={handleCancelDelete}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn-confirm-delete" 
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
