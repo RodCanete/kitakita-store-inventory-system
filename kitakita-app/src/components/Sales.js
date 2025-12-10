@@ -14,6 +14,10 @@ export default function Sales({ token }) {
     notes: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [productFilter, setProductFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [downloading, setDownloading] = useState(false);
 
   // Fetch sales and products from backend
   useEffect(() => {
@@ -119,19 +123,106 @@ export default function Sales({ token }) {
     }
   };
 
+  // Filter sales based on product and date
+  const filteredSales = salesData.filter(sale => {
+    const matchesProduct = productFilter === '' || 
+      sale.productName.toLowerCase().includes(productFilter.toLowerCase());
+    const matchesDate = dateFilter === '' || 
+      new Date(sale.saleDate).toLocaleDateString() === new Date(dateFilter).toLocaleDateString();
+    return matchesProduct && matchesDate;
+  });
+
+  // Download sales as CSV
+  const handleDownloadCsv = () => {
+    setDownloading(true);
+    try {
+      const headers = ['Product', 'Sale Value', 'Quantity', 'Sale ID', 'Date'];
+      const csvContent = [
+        headers.join(','),
+        ...filteredSales.map(sale => 
+          [
+            `"${sale.productName}"`,
+            `"₱${parseFloat(sale.totalValue).toLocaleString()}"`,
+            `"${sale.quantity}"`,
+            `"${sale.saleCode}"`,
+            `"${new Date(sale.saleDate).toLocaleDateString()}"`
+          ].join(',')
+        )
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'kitakita-sales.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="sales">
       <div className="sales-header">
         <h1 className="page-title">Sales</h1>
         <div className="sales-actions">
-          <button className="btn-primary" onClick={() => setShowModal(true)}>Add Sale</button>
-          <button className="btn-secondary">
-            <span style={{ marginRight: '8px' }}>🔍</span>
+          <button className="btn-primary-icon" onClick={() => setShowModal(true)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Sale
+          </button>
+          <button className="btn-filter" onClick={() => setShowFilters(!showFilters)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
             Filters
           </button>
-          <button className="btn-secondary">Order History</button>
+          <button className="btn-secondary-icon" onClick={handleDownloadCsv} disabled={downloading}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            {downloading ? 'Downloading...' : 'Download all'}
+          </button>
         </div>
       </div>
+
+      {/* Filters Panel */}
+      {showFilters && (
+        <div className="filters-panel">
+          <div className="filter-group">
+            <label>Product:</label>
+            <input
+              type="text"
+              placeholder="Search by product name..."
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              className="filter-input"
+            />
+          </div>
+          <div className="filter-group">
+            <label>Date:</label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="filter-input"
+            />
+          </div>
+          <button className="btn-clear-filters" onClick={() => {
+            setProductFilter('');
+            setDateFilter('');
+          }}>
+            Clear Filters
+          </button>
+        </div>
+      )}
 
       <div className="sales-table-container">
         {loading ? (
@@ -148,7 +239,7 @@ export default function Sales({ token }) {
               </tr>
             </thead>
             <tbody>
-              {salesData.map((sale) => (
+              {filteredSales.map((sale) => (
                 <tr key={sale.saleId}>
                   <td>{sale.productName}</td>
                   <td>₱{parseFloat(sale.totalValue).toLocaleString()}</td>
@@ -157,6 +248,11 @@ export default function Sales({ token }) {
                   <td>{new Date(sale.saleDate).toLocaleDateString()}</td>
                 </tr>
               ))}
+              {filteredSales.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center">No sales found</td>
+                </tr>
+              )}
             </tbody>
           </table>
         )}

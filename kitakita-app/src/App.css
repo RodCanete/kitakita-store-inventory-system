@@ -1034,6 +1034,26 @@ body {
   box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
 }
 
+.filter-group input.filter-input {
+  padding: 8px 12px;
+  border: 2px solid #e3ecf9;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  min-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.filter-group input.filter-input:focus {
+  outline: none;
+  border-color: #0b63e8;
+  box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
+}
+
+.filter-group input.filter-input::placeholder {
+  color: #94a3b8;
+}
+
 .btn-clear-filters {
   background: #fff;
   color: #64748b;
@@ -3801,4 +3821,207 @@ body {
 
 .history-card-user svg {
   color: #94a3b8;
+}
+
+/* Settings Page Styles - Simple */
+.settings-simple {
+  padding: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.settings-simple-container {
+  margin-top: 24px;
+}
+
+.settings-simple-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.settings-simple-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.settings-simple-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.settings-simple-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-simple-item:last-child {
+  border-bottom: none;
+}
+
+.settings-simple-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.settings-simple-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+  text-align: right;
+}
+
+.settings-simple-value.status-active {
+  color: #059669;
+}
+
+.settings-simple-value.status-inactive {
+  color: #dc2626;
+}
+
+.settings-simple-actions {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #f1f5f9;
+}
+
+.btn-delete-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-account:hover {
+  background: #fecaca;
+  border-color: #fca5a5;
+}
+
+.btn-delete-account:active {
+  background: #fca5a5;
+}
+
+.btn-delete-account svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Delete Account Modal */
+.delete-modal {
+  max-width: 480px;
+  width: 90%;
+}
+
+.delete-modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.delete-modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.delete-modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.delete-modal-message {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.btn-cancel-delete {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-delete:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn-cancel-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-confirm-delete {
+  padding: 10px 20px;
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-delete:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-confirm-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .settings-simple {
+    padding: 16px;
+  }
+
+  .settings-simple-section {
+    padding: 20px;
+  }
+
+  .settings-simple-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .settings-simple-value {
+    text-align: left;
+  }
 }

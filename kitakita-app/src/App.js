@@ -9,6 +9,7 @@ import Reports from './components/Reports';
 import Sales from './components/Sales';
 import Suppliers from './components/Suppliers';
 import Categories from './components/Categories';
+import Settings from './components/Settings';
 
 function App() {
   const [mode, setMode] = useState('login');
@@ -70,6 +71,16 @@ function App() {
     setCurrentPage('dashboard'); // Reset to default page after logout
   };
 
+  const handleDeleteAccount = async () => {
+    // Clear local storage and logout
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('kitakita_token');
+    localStorage.removeItem('kitakita_user');
+    setMode('login');
+    setCurrentPage('dashboard');
+  };
+
   const handleNavigate = (page) => {
     setCurrentPage(page);
   };
@@ -95,7 +106,7 @@ function App() {
       case 'categories':
         return <Categories {...pageProps} />;
       case 'settings':
-        return <div className="coming-soon">Coming Soon: {currentPage.charAt(0).toUpperCase() + currentPage.slice(1)}</div>;
+        return <Settings {...pageProps} onDeleteAccount={handleDeleteAccount} />;
       default:
         return <Dashboard {...pageProps} />;
     }
