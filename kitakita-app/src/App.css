@@ -3646,3 +3646,159 @@ body {
     font-size: 13px;
   }
 }
+
+/* Improved Activity History Timeline */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #e2e8f0;
+}
+
+.empty-state-container .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state-container p {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 8px 0;
+}
+
+.empty-state-container small {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.history-timeline-improved {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px 0;
+}
+
+.history-card {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.history-card-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 24px;
+}
+
+.history-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 3px solid #dbeafe;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.history-dot.purchase {
+  background: #3b82f6;
+  border-color: #dbeafe;
+}
+
+.history-dot.adjustment {
+  background: #8b5cf6;
+  border-color: #ede9fe;
+}
+
+.history-line {
+  width: 2px;
+  flex-grow: 1;
+  background: #e2e8f0;
+  min-height: 20px;
+}
+
+.history-card-content {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.history-card-content:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.history-badge.purchase {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.history-badge.adjustment {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.history-card-time {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.history-card-body {
+  margin-bottom: 12px;
+}
+
+.history-card-description {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.history-card-footer {
+  display: flex;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.history-card-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.history-card-user svg {
+  color: #94a3b8;
+}

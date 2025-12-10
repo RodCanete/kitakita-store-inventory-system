@@ -634,9 +634,9 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                         <th>Purchase ID</th>
                         <th>Date</th>
                         <th>Supplier</th>
-                        <th className="text-right">Quantity</th>
-                        <th className="text-right">Unit Price</th>
-                        <th className="text-right">Total</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
                         <th>Status</th>
                       </tr>
                     </thead>
@@ -646,9 +646,9 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                           <td className="purchase-id">{purchase.purchaseCode || `PUR-${purchase.purchaseId}`}</td>
                           <td>{formatDate(purchase.purchaseDate)}</td>
                           <td>{purchase.supplierName || 'N/A'}</td>
-                          <td className="text-right">{purchase.quantity}</td>
-                          <td className="text-right">₱{purchase.unitCost?.toFixed(2) || '0.00'}</td>
-                          <td className="text-right purchase-total">₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
+                          <td>{purchase.quantity}</td>
+                          <td>₱{purchase.unitCost?.toFixed(2) || '0.00'}</td>
+                          <td className="purchase-total">₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
                           <td>
                             <span className={`status-badge ${purchase.status?.toLowerCase() || 'pending'}`}>
                               {purchase.status?.toLowerCase() === 'completed' ? 'Completed' : 
@@ -679,11 +679,11 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                             <strong>Grand Total</strong>
                             <span className="total-items">({purchaseStats.totalPurchases} {purchaseStats.totalPurchases === 1 ? 'purchase' : 'purchases'})</span>
                           </td>
-                          <td className="text-right grand-total-qty">
+                          <td className="grand-total-qty">
                             <strong>{purchaseStats.totalQuantity}</strong>
                           </td>
                           <td></td>
-                          <td className="text-right grand-total-amount">
+                          <td className="grand-total-amount">
                             <strong>₱{purchaseStats.totalSpent.toFixed(2)}</strong>
                           </td>
                           <td></td>
@@ -698,33 +698,47 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
           {activeTab === 'adjustments' && (
             <div className="tab-content-section">
-              {/* Adjustment Summary Cards */}
-              <div className="adjustment-summary">
-                <div className="adjustment-summary-card primary">
-                  <div className="adjustment-summary-title">Total Adjustments</div>
-                  <div className="adjustment-summary-value">{adjustmentStats.totalAdjustments}</div>
+              <div className="section-header-improved">
+                <div className="section-header-left">
+                  <h3 className="section-title-main">Adjustment History</h3>
+                  <span className="section-subtitle">{adjustmentStats.totalAdjustments} {adjustmentStats.totalAdjustments === 1 ? 'adjustment' : 'adjustments'}</span>
                 </div>
-                <div className="adjustment-summary-card success">
-                  <div className="adjustment-summary-title">Total Added</div>
-                  <div className="adjustment-summary-value">{adjustmentStats.totalAdded}</div>
-                </div>
-                <div className="adjustment-summary-card warning">
-                  <div className="adjustment-summary-title">Total Removed</div>
-                  <div className="adjustment-summary-value">{adjustmentStats.totalRemoved}</div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="btn-secondary-icon" 
+                    onClick={fetchProductHistory}
+                    title="Refresh adjustments"
+                    style={{ padding: '10px 16px', fontSize: '14px' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    onClick={handleAddAdjustment}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add New Adjustment
+                  </button>
                 </div>
               </div>
-
-              <div className="section-header">
-                <h3 className="section-title">Adjustment History</h3>
-                <button className="btn-primary" onClick={handleAddAdjustment}>
-                  Add New Adjustment
-                </button>
-              </div>
+              
               {loading ? (
-                <div>Loading...</div>
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Loading adjustments...</p>
+                </div>
               ) : (
-                <div className="table-container">
-                  <table className="details-table">
+                <div className="table-wrapper">
+                  <table className="enhanced-table">
                     <thead>
                       <tr>
                         <th>Adjustment ID</th>
@@ -738,11 +752,14 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                     <tbody>
                       {adjustmentsData.map((adjustment, idx) => (
                         <tr key={idx}>
-                          <td>{adjustment.adjustmentId}</td>
+                          <td className="purchase-id">ADJ-{String(adjustment.adjustmentId).padStart(3, '0')}</td>
                           <td>{formatDate(adjustment.adjustmentDate)}</td>
                           <td>
                             <span className={`status-badge ${adjustment.adjustmentType?.toLowerCase() || 'info'}`}>
-                              {adjustment.adjustmentType}
+                              {adjustment.adjustmentType === 'ADD' ? 'Added' : 
+                               adjustment.adjustmentType === 'REMOVE' ? 'Removed' : 
+                               adjustment.adjustmentType === 'CORRECTION' ? 'Correction' :
+                               adjustment.adjustmentType}
                             </span>
                           </td>
                           <td>{adjustment.quantity}</td>
@@ -752,10 +769,28 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                       ))}
                       {adjustmentsData.length === 0 && (
                         <tr>
-                          <td colSpan="6" className="text-center">No adjustment history found</td>
+                          <td colSpan="6" className="empty-state">
+                            <div className="empty-icon">📋</div>
+                            <p>No adjustment history found</p>
+                            <small>Add your first adjustment to modify inventory</small>
+                          </td>
                         </tr>
                       )}
                     </tbody>
+                    {adjustmentsData.length > 0 && (
+                      <tfoot>
+                        <tr className="grand-total-row">
+                          <td colSpan="3" className="grand-total-label">
+                            <strong>Summary</strong>
+                            <span className="total-items">({adjustmentStats.totalAdjustments} {adjustmentStats.totalAdjustments === 1 ? 'adjustment' : 'adjustments'})</span>
+                          </td>
+                          <td className="grand-total-qty">
+                            <strong>+{adjustmentStats.totalAdded} / -{adjustmentStats.totalRemoved}</strong>
+                          </td>
+                          <td colSpan="2"></td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                 </div>
               )}
@@ -764,27 +799,69 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
           {activeTab === 'history' && (
             <div className="tab-content-section">
-              <h3 className="section-title">Activity History</h3>
+              <div className="section-header-improved">
+                <div className="section-header-left">
+                  <h3 className="section-title-main">Activity History</h3>
+                  <span className="section-subtitle">{historyData.length} {historyData.length === 1 ? 'activity' : 'activities'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="btn-secondary-icon" 
+                    onClick={fetchProductHistory}
+                    title="Refresh history"
+                    style={{ padding: '10px 16px', fontSize: '14px' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+              
               {loading ? (
-                <div>Loading...</div>
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Loading history...</p>
+                </div>
+              ) : historyData.length === 0 ? (
+                <div className="empty-state-container">
+                  <div className="empty-icon">📜</div>
+                  <p>No activity history found</p>
+                  <small>Activities will appear here when you make purchases or adjustments</small>
+                </div>
               ) : (
-                <div className="history-timeline">
+                <div className="history-timeline-improved">
                   {historyData.map((item, idx) => (
-                    <div key={idx} className="history-item">
-                      <div className="history-date-time">
-                        <div className="history-date">{item.date}</div>
-                        <div className="history-time">{item.time}</div>
+                    <div key={idx} className="history-card">
+                      <div className="history-card-indicator">
+                        <div className={`history-dot ${item.action.includes('Purchase') ? 'purchase' : 'adjustment'}`}></div>
+                        {idx < historyData.length - 1 && <div className="history-line"></div>}
                       </div>
-                      <div className="history-content">
-                        <div className="history-action">{item.action}</div>
-                        <div className="history-description">{item.description}</div>
-                        <div className="history-user">By: {item.user}</div>
+                      <div className="history-card-content">
+                        <div className="history-card-header">
+                          <span className={`history-badge ${item.action.includes('Purchase') ? 'purchase' : 'adjustment'}`}>
+                            {item.action.includes('Purchase') ? '🛒' : '📋'} {item.action}
+                          </span>
+                          <span className="history-card-time">{item.date} at {item.time}</span>
+                        </div>
+                        <div className="history-card-body">
+                          <p className="history-card-description">{item.description}</p>
+                        </div>
+                        <div className="history-card-footer">
+                          <span className="history-card-user">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                              <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {item.user}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}
-                  {historyData.length === 0 && (
-                    <div className="text-center">No activity history found</div>
-                  )}
                 </div>
               )}
             </div>

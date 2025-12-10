@@ -148,7 +148,7 @@ export default function Reports({ token }) {
       <div className="chart-card">
         <div className="chart-header">
           <h3>Profit & Revenue</h3>
-          <button className="chart-filter">Weekly</button>
+          
         </div>
         <div className="chart-wrapper">
           <LineChart width={chartWidth} height={350} data={profitRevenueData}>
