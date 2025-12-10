@@ -9,6 +9,7 @@ public interface SaleService {
     PagedResponse<SaleResponse> getSales(String search, int page, int size);
     SaleResponse createSale(SaleRequest request);
     SaleResponse getSaleById(Integer id);
+    SaleResponse updateSale(Integer id, SaleRequest request);
     void deleteSale(Integer id);
     SalesSummaryResponse getSalesSummary();
 }
