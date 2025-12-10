@@ -1034,6 +1034,26 @@ body {
   box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
 }
 
+.filter-group input.filter-input {
+  padding: 8px 12px;
+  border: 2px solid #e3ecf9;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  min-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.filter-group input.filter-input:focus {
+  outline: none;
+  border-color: #0b63e8;
+  box-shadow: 0 0 0 3px rgba(11, 99, 232, 0.1);
+}
+
+.filter-group input.filter-input::placeholder {
+  color: #94a3b8;
+}
+
 .btn-clear-filters {
   background: #fff;
   color: #64748b;
@@ -3801,4 +3821,127 @@ body {
 
 .history-card-user svg {
   color: #94a3b8;
+}
+
+/* Settings Page Styles */
+.settings {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.settings-section-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.settings-section-description {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.form-success {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #a7f3d0;
+  font-size: 14px;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.account-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.account-info-item:last-child {
+  border-bottom: none;
+}
+
+.account-info-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.account-info-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.account-info-value.status-active {
+  color: #059669;
+}
+
+.account-info-value.status-inactive {
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .settings {
+    padding: 16px;
+  }
+
+  .settings-section {
+    padding: 16px;
+  }
+
+  .account-info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
 }
