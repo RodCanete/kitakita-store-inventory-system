@@ -569,9 +569,10 @@ export default function Inventory({ token }) {
               <thead>
                 <tr>
                   <th>Products</th>
+                  <th>Category</th>
                   <th>Buying Price</th>
                   <th>Quantity</th>
-                  <th>Threshold Value</th>
+                  <th>Threshold</th>
                   <th>Expiry Date</th>
                   <th>Availability</th>
                   <th>Actions</th>
@@ -586,6 +587,11 @@ export default function Inventory({ token }) {
                       style={{ cursor: 'pointer', color: '#0b63e8', fontWeight: '500' }}
                     >
                       {product.productName}
+                    </td>
+                    <td>
+                      <span className="category-badge">
+                        {product.categoryName || 'Uncategorized'}
+                      </span>
                     </td>
                     <td>{formatCurrency(product.buyingPrice)}</td>
                     <td>{product.quantity} {product.unit}</td>
@@ -629,7 +635,7 @@ export default function Inventory({ token }) {
                 ))}
                 {!products.length && (
                   <tr>
-                    <td colSpan={7} className="muted">No products found. Try a different search.</td>
+                    <td colSpan={8} className="muted">No products found. Try a different search.</td>
                   </tr>
                 )}
               </tbody>

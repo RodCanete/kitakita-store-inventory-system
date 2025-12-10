@@ -173,7 +173,12 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     }));
   };
 
-  const handleAddPurchase = () => {
+  const handleAddPurchase = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    console.log('Opening purchase modal for product:', product.productId);
     setPurchaseFormData({
       productId: product.productId,
       supplierId: '',
@@ -182,6 +187,7 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       notes: ''
     });
     setShowPurchaseModal(true);
+    console.log('Purchase modal state set to:', true);
   };
 
   const handleSavePurchase = async (e) => {
@@ -223,6 +229,9 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       // Regenerate history data
       const history = generateHistoryFromData([response, ...purchasesData], adjustmentsData);
       setHistoryData(history);
+      
+      // Refresh purchase data from database to ensure sync
+      await fetchProductHistory();
       
       // Close the modal
       setShowPurchaseModal(false);
@@ -495,69 +504,70 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
         <div className="product-tab-content">
           {activeTab === 'overview' && (
             <div className="overview-content">
-              <div className="product-details-grid">
-                {/* Primary Details */}
-                <div className="product-details-section">
-                  <h3 className="section-title">Primary Details</h3>
-                  <div className="detail-item">
-                    <span className="detail-label">Product name:</span>
-                    <span className="detail-value">{productData.name}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Product ID:</span>
-                    <span className="detail-value">{productData.productId}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Product category:</span>
-                    <span className="detail-value">{productData.category}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Expiry Date:</span>
-                    <span className="detail-value">{productData.expiryDate}</span>
-                  </div>
+              {/* Product Header with Image and Name */}
+              <div className="product-overview-header">
+                <div className="product-image-left">
+                  {product.imageUrl ? (
+                    <img 
+                      src={product.imageUrl} 
+                      alt={productData.name} 
+                      className="product-image-main"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = `
+                          <div class="product-image-placeholder-main">
+                            <div class="image-placeholder-icon">📦</div>
+                          </div>
+                        `;
+                      }}
+                    />
+                  ) : (
+                    <div className="product-image-placeholder-main">
+                      <div className="image-placeholder-icon">📦</div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Product Image */}
-                <div className="product-image-section">
-                  <div className="product-image-container">
-                    {product.imageUrl ? (
-                      <img 
-                        src={product.imageUrl} 
-                        alt={productData.name} 
-                        className="product-image"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.innerHTML = `
-                            <div class="product-image-placeholder">
-                              <div class="image-placeholder-icon">📦</div>
-                              <p>Image Load Error</p>
-                            </div>
-                          `;
-                        }}
-                      />
-                    ) : (
-                      <div className="product-image-placeholder">
-                        <div className="image-placeholder-icon">📦</div>
-                        <p>No Image Available</p>
-                      </div>
-                    )}
+                <div className="product-info-main">
+                  <h2 className="product-name-main">{productData.name}</h2>
+                  <div className="product-meta-grid">
+                    <div className="meta-item">
+                      <span className="meta-label">Product ID</span>
+                      <span className="meta-value">#{productData.productId}</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">Category</span>
+                      <span className="meta-value">{productData.category}</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">Expiry Date</span>
+                      <span className="meta-value">{productData.expiryDate}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Stock Information */}
-              <div className="stock-information">
-                <div className="stock-item">
-                  <span className="stock-label">Opening Stock</span>
-                  <span className="stock-value">{productData.openingStock}</span>
+              {/* Stock Information - Enhanced */}
+              <div className="stock-cards">
+                <div className="stock-card">
+                  <div className="stock-card-icon">📦</div>
+                  <div className="stock-card-content">
+                    <span className="stock-card-label">Opening Stock</span>
+                    <span className="stock-card-value">{productData.openingStock}</span>
+                  </div>
                 </div>
-                <div className="stock-item">
-                  <span className="stock-label">Remaining Stock</span>
-                  <span className="stock-value">{productData.remainingStock}</span>
+                <div className="stock-card">
+                  <div className="stock-card-icon">📊</div>
+                  <div className="stock-card-content">
+                    <span className="stock-card-label">Remaining Stock</span>
+                    <span className="stock-card-value">{productData.remainingStock}</span>
+                  </div>
                 </div>
-                <div className="stock-item">
-                  <span className="stock-label">On the way</span>
-                  <span className="stock-value">{productData.onTheWay}</span>
+                <div className="stock-card">
+                  <div className="stock-card-icon">🚚</div>
+                  <div className="stock-card-content">
+                    <span className="stock-card-label">On the Way</span>
+                    <span className="stock-card-value">{productData.onTheWay}</span>
+                  </div>
                 </div>
               </div>
 
@@ -578,57 +588,67 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
           {activeTab === 'purchases' && (
             <div className="tab-content-section">
-              {/* Purchase Summary Cards */}
-              <div className="purchase-summary">
-                <div className="purchase-summary-card primary">
-                  <div className="purchase-summary-title">Total Purchases</div>
-                  <div className="purchase-summary-value">{purchaseStats.totalPurchases}</div>
+              <div className="section-header-improved">
+                <div className="section-header-left">
+                  <h3 className="section-title-main">Purchase History</h3>
+                  <span className="section-subtitle">{purchaseStats.totalPurchases} {purchaseStats.totalPurchases === 1 ? 'transaction' : 'transactions'}</span>
                 </div>
-                <div className="purchase-summary-card success">
-                  <div className="purchase-summary-title">Total Quantity</div>
-                  <div className="purchase-summary-value">{purchaseStats.totalQuantity}</div>
-                </div>
-                <div className="purchase-summary-card warning">
-                  <div className="purchase-summary-title">Total Spent</div>
-                  <div className="purchase-summary-value">₱{purchaseStats.totalSpent.toFixed(2)}</div>
-                </div>
-                <div className="purchase-summary-card">
-                  <div className="purchase-summary-title">Avg. Cost</div>
-                  <div className="purchase-summary-value">₱{purchaseStats.averageCost.toFixed(2)}</div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    className="btn-secondary-icon" 
+                    onClick={fetchProductHistory}
+                    title="Refresh purchases"
+                    style={{ padding: '10px 16px', fontSize: '14px' }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <polyline points="1 20 1 14 7 14"></polyline>
+                      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    Refresh
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    onClick={handleAddPurchase}
+                    type="button"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add New Purchase
+                  </button>
                 </div>
               </div>
-
-              <div className="section-header">
-                <h3 className="section-title">Purchase History</h3>
-                <button className="btn-primary" onClick={handleAddPurchase}>
-                  Add New Purchase
-                </button>
-              </div>
+              
               {loading ? (
-                <div>Loading...</div>
+                <div className="loading-state">
+                  <div className="loading-spinner"></div>
+                  <p>Loading purchases...</p>
+                </div>
               ) : (
-                <div className="table-container">
-                  <table className="details-table">
+                <div className="table-wrapper">
+                  <table className="enhanced-table">
                     <thead>
                       <tr>
                         <th>Purchase ID</th>
                         <th>Date</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Total Price</th>
                         <th>Supplier</th>
+                        <th className="text-right">Quantity</th>
+                        <th className="text-right">Unit Price</th>
+                        <th className="text-right">Total</th>
                         <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {purchasesData.map((purchase, idx) => (
                         <tr key={idx}>
-                          <td>{purchase.purchaseCode || `PUR-${purchase.purchaseId}`}</td>
+                          <td className="purchase-id">{purchase.purchaseCode || `PUR-${purchase.purchaseId}`}</td>
                           <td>{formatDate(purchase.purchaseDate)}</td>
-                          <td>{purchase.quantity}</td>
-                          <td>₱{purchase.unitCost?.toFixed(2) || '0.00'}</td>
-                          <td>₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
                           <td>{purchase.supplierName || 'N/A'}</td>
+                          <td className="text-right">{purchase.quantity}</td>
+                          <td className="text-right">₱{purchase.unitCost?.toFixed(2) || '0.00'}</td>
+                          <td className="text-right purchase-total">₱{purchase.totalCost?.toFixed(2) || '0.00'}</td>
                           <td>
                             <span className={`status-badge ${purchase.status?.toLowerCase() || 'pending'}`}>
                               {purchase.status?.toLowerCase() === 'completed' ? 'Completed' : 
@@ -644,10 +664,32 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
                       ))}
                       {purchasesData.length === 0 && (
                         <tr>
-                          <td colSpan="7" className="text-center">No purchase history found</td>
+                          <td colSpan="7" className="empty-state">
+                            <div className="empty-icon">📦</div>
+                            <p>No purchase history found</p>
+                            <small>Add your first purchase to track inventory</small>
+                          </td>
                         </tr>
                       )}
                     </tbody>
+                    {purchasesData.length > 0 && (
+                      <tfoot>
+                        <tr className="grand-total-row">
+                          <td colSpan="3" className="grand-total-label">
+                            <strong>Grand Total</strong>
+                            <span className="total-items">({purchaseStats.totalPurchases} {purchaseStats.totalPurchases === 1 ? 'purchase' : 'purchases'})</span>
+                          </td>
+                          <td className="text-right grand-total-qty">
+                            <strong>{purchaseStats.totalQuantity}</strong>
+                          </td>
+                          <td></td>
+                          <td className="text-right grand-total-amount">
+                            <strong>₱{purchaseStats.totalSpent.toFixed(2)}</strong>
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                 </div>
               )}
@@ -752,7 +794,7 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
 
       {/* Add Purchase Modal */}
       {showPurchaseModal && (
-        <div className="modal-overlay" onClick={handleCancelPurchase}>
+        <div className="modal-overlay" onClick={handleCancelPurchase} style={{ zIndex: 2000 }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="purchase-form-header">
               <h3>Add New Purchase</h3>
