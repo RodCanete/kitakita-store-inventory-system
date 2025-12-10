@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { DashboardApi } from '../api/client';
 import '../App.css';
+
+// Color palette for categories
+const CATEGORY_COLORS = [
+  '#0b63e8', // Blue
+  '#8b5cf6', // Purple
+  '#10b981', // Green
+  '#f59e0b', // Orange
+  '#ef4444', // Red
+  '#06b6d4', // Cyan
+  '#ec4899', // Pink
+  '#6366f1', // Indigo
+  '#84cc16', // Lime
+  '#f97316', // Deep Orange
+];
 
 const formatNumber = (value) => {
   if (value === undefined || value === null) return '-';
@@ -132,13 +146,20 @@ export default function Dashboard({ token }) {
           </div>
           <div className="chart-wrapper">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={inventoryByCategory}>
+              <BarChart 
+                data={inventoryByCategory}
+                barSize={inventoryByCategory.length <= 4 ? 60 : inventoryByCategory.length <= 6 ? 45 : 30}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="value" name="Quantity" fill="#0b63e8" />
+                <Bar dataKey="value" name="Quantity" radius={[8, 8, 0, 0]}>
+                  {inventoryByCategory.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

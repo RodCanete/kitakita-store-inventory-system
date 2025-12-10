@@ -48,6 +48,10 @@ export default function Inventory({ token }) {
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Add common units array for the dropdown
   const commonUnits = [
@@ -104,12 +108,234 @@ export default function Inventory({ token }) {
       ...prev,
       [name]: value
     }));
+    
+    // Real-time validation as user types
+    const errors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (name === 'productName' && value.trim().length > 0 && value.trim().length < 2) {
+      errors.productName = 'Product name must be at least 2 characters';
+    }
+
+    if (name === 'buyingPrice' && value && parseFloat(value) <= 0) {
+      errors.buyingPrice = 'Buying price must be greater than 0';
+    }
+
+    if (name === 'sellingPrice') {
+      if (value && parseFloat(value) <= 0) {
+        errors.sellingPrice = 'Selling price must be greater than 0';
+      } else if (value && formData.buyingPrice && parseFloat(value) <= parseFloat(formData.buyingPrice)) {
+        errors.sellingPrice = 'Selling price must be greater than buying price';
+      }
+    }
+
+    if (name === 'quantity' && value && parseInt(value) < 0) {
+      errors.quantity = 'Quantity cannot be negative';
+    }
+
+    if (name === 'thresholdValue' && value && parseInt(value) < 0) {
+      errors.thresholdValue = 'Threshold value cannot be negative';
+    }
+
+    if (name === 'openingStock' && value && parseInt(value) < 0) {
+      errors.openingStock = 'Opening stock cannot be negative';
+    }
+
+    if (name === 'onTheWay' && value && parseInt(value) < 0) {
+      errors.onTheWay = 'On the way quantity cannot be negative';
+    }
+
+    if (name === 'expiryDate' && value) {
+      const expiryDate = new Date(value);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      if (expiryDate < today) {
+        errors.expiryDate = 'Expiry date cannot be in the past';
+      } else {
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+        sevenDaysFromNow.setHours(0, 0, 0, 0);
+        
+        if (expiryDate < sevenDaysFromNow) {
+          errors.expiryDate = 'Warning: Product expires within 7 days';
+        }
+      }
+    }
+
+    // Update errors for this field
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: errors[name] || null
+    }));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      setFormErrors(prev => ({
+        ...prev,
+        imageUrl: 'Please select a valid image file (JPEG, PNG, WebP, GIF)'
+      }));
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setFormErrors(prev => ({
+        ...prev,
+        imageUrl: 'Image size must be less than 5MB'
+      }));
+      return;
+    }
+
+    setUploadingImage(true);
+    setImageFile(file);
+
+    try {
+      // Convert image to Base64
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const base64String = event.target.result;
+        
+        // Set preview
+        setImagePreview(base64String);
+        
+        // Store Base64 string directly in form data
+        setFormData(prev => ({
+          ...prev,
+          imageUrl: base64String
+        }));
+
+        // Clear any previous errors
+        setFormErrors(prev => ({
+          ...prev,
+          imageUrl: null
+        }));
+        
+        setUploadingImage(false);
+      };
+
+      reader.onerror = () => {
+        setFormErrors(prev => ({
+          ...prev,
+          imageUrl: 'Failed to read image file'
+        }));
+        setImagePreview(null);
+        setImageFile(null);
+        setUploadingImage(false);
+      };
+
+      // Read file as Data URL (Base64)
+      reader.readAsDataURL(file);
+
+    } catch (error) {
+      console.error('Image upload error:', error);
+      setFormErrors(prev => ({
+        ...prev,
+        imageUrl: error.message || 'Failed to process image'
+      }));
+      setImagePreview(null);
+      setImageFile(null);
+      setUploadingImage(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setFormData(prev => ({
+      ...prev,
+      imageUrl: ''
+    }));
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Product Name validation
+    if (!formData.productName || formData.productName.trim().length < 2) {
+      errors.productName = 'Product name must be at least 2 characters';
+    }
+
+    // Category validation
+    if (!formData.categoryId) {
+      errors.categoryId = 'Please select a category';
+    }
+
+    // Buying Price validation
+    if (!formData.buyingPrice || parseFloat(formData.buyingPrice) <= 0) {
+      errors.buyingPrice = 'Buying price must be greater than 0';
+    }
+
+    // Selling Price validation
+    if (!formData.sellingPrice || parseFloat(formData.sellingPrice) <= 0) {
+      errors.sellingPrice = 'Selling price must be greater than 0';
+    } else if (parseFloat(formData.sellingPrice) <= parseFloat(formData.buyingPrice)) {
+      errors.sellingPrice = 'Selling price must be greater than buying price';
+    }
+
+    // Quantity validation
+    if (formData.quantity === '' || parseInt(formData.quantity) < 0) {
+      errors.quantity = 'Quantity cannot be negative';
+    }
+
+    // Threshold validation
+    if (formData.thresholdValue === '' || parseInt(formData.thresholdValue) < 0) {
+      errors.thresholdValue = 'Threshold value cannot be negative';
+    }
+
+    // Opening Stock validation
+    if (formData.openingStock === '' || parseInt(formData.openingStock) < 0) {
+      errors.openingStock = 'Opening stock cannot be negative';
+    }
+
+    // On The Way validation
+    if (formData.onTheWay === '' || parseInt(formData.onTheWay) < 0) {
+      errors.onTheWay = 'On the way quantity cannot be negative';
+    }
+
+    // Unit validation
+    if (!formData.unit) {
+      errors.unit = 'Please select a unit';
+    }
+
+    // Expiry Date validation
+    if (formData.expiryDate) {
+      const expiryDate = new Date(formData.expiryDate);
+      expiryDate.setHours(0, 0, 0, 0);
+      
+      if (expiryDate < today) {
+        errors.expiryDate = 'Expiry date cannot be in the past';
+      }
+      
+      // Check if expiry is too soon (within 7 days)
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      sevenDaysFromNow.setHours(0, 0, 0, 0);
+      
+      if (expiryDate < sevenDaysFromNow) {
+        errors.expiryDate = 'Warning: Product expires within 7 days';
+      }
+    }
+
+    return errors;
   };
 
   const resetForm = () => {
     setFormData(emptyForm);
     setFormMode('create');
     setEditingProductId(null);
+    setImageFile(null);
+    setImagePreview(null);
+    setFormErrors({});
   };
 
   const handleDiscard = () => {
@@ -118,7 +344,7 @@ export default function Inventory({ token }) {
   };
 
   const openCreateModal = () => {
-    resetForm();
+    resetForm(); // This now clears image state and errors
     setFormMode('create');
     setShowModal(true);
   };
@@ -141,6 +367,16 @@ export default function Inventory({ token }) {
     });
     setEditingProductId(product.productId);
     setSelectedProduct(null); // Ensure ProductDetails modal is closed
+    
+    // Set image preview if product has an image
+    if (product.imageUrl) {
+      setImagePreview(product.imageUrl);
+    } else {
+      setImagePreview(null);
+    }
+    setImageFile(null);
+    setFormErrors({});
+    
     setShowModal(true);
   };
 
@@ -163,8 +399,19 @@ export default function Inventory({ token }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!token) return;
+    
+    // Validate form
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFormErrors(validationErrors);
+      setError('Please fix the errors in the form before submitting');
+      return;
+    }
+    
     setSaving(true);
     setError(null);
+    setFormErrors({});
+    
     try {
       const payload = toPayload();
       if (formMode === 'edit' && editingProductId) {
@@ -211,18 +458,36 @@ export default function Inventory({ token }) {
     }
   };
 
-  const getAvailabilityClass = (product) => {
-    if (product.quantity <= product.thresholdValue) return 'low-stock';
-    return 'in-stock';
+  const getAvailabilityStatus = (product) => {
+    if (product.quantity === 0) {
+      return { status: 'Out of Stock', class: 'out-of-stock' };
+    }
+    if (product.quantity <= product.thresholdValue) {
+      return { status: 'Low Stock', class: 'low-stock' };
+    }
+    return { status: 'In Stock', class: 'in-stock' };
   };
 
   // Filter products
   const filteredProducts = products.filter(product => {
     if (categoryFilter && product.categoryId !== parseInt(categoryFilter)) return false;
-    if (statusFilter === 'low' && product.quantity > product.thresholdValue) return false;
+    if (statusFilter === 'out-of-stock' && product.quantity !== 0) return false;
+    if (statusFilter === 'low-stock' && (product.quantity === 0 || product.quantity > product.thresholdValue)) return false;
     if (statusFilter === 'in-stock' && product.quantity <= product.thresholdValue) return false;
     return true;
   });
+
+  // If a product is selected, show full-screen product details
+  if (selectedProduct) {
+    return (
+      <ProductDetails
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onEdit={openEditModal}
+        token={token}
+      />
+    );
+  }
 
   return (
     <div className="inventory">
@@ -283,7 +548,8 @@ export default function Inventory({ token }) {
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                 <option value="">All Status</option>
                 <option value="in-stock">In Stock</option>
-                <option value="low">Low Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="out-of-stock">Out of Stock</option>
               </select>
             </div>
             <button className="btn-clear-filters" onClick={() => {
@@ -303,9 +569,10 @@ export default function Inventory({ token }) {
               <thead>
                 <tr>
                   <th>Products</th>
+                  <th>Category</th>
                   <th>Buying Price</th>
                   <th>Quantity</th>
-                  <th>Threshold Value</th>
+                  <th>Threshold</th>
                   <th>Expiry Date</th>
                   <th>Availability</th>
                   <th>Actions</th>
@@ -321,13 +588,18 @@ export default function Inventory({ token }) {
                     >
                       {product.productName}
                     </td>
+                    <td>
+                      <span className="category-badge">
+                        {product.categoryName || 'Uncategorized'}
+                      </span>
+                    </td>
                     <td>{formatCurrency(product.buyingPrice)}</td>
                     <td>{product.quantity} {product.unit}</td>
                     <td>{product.thresholdValue} {product.unit}</td>
                     <td>{formatDate(product.expiryDate)}</td>
                     <td>
-                      <span className={`availability-badge ${getAvailabilityClass(product)}`}>
-                        {product.quantity <= product.thresholdValue ? 'Out of stock' : 'In- stock'}
+                      <span className={`availability-badge ${getAvailabilityStatus(product).class}`}>
+                        {getAvailabilityStatus(product).status}
                       </span>
                     </td>
                     <td className="table-actions">
@@ -363,7 +635,7 @@ export default function Inventory({ token }) {
                 ))}
                 {!products.length && (
                   <tr>
-                    <td colSpan={7} className="muted">No products found. Try a different search.</td>
+                    <td colSpan={8} className="muted">No products found. Try a different search.</td>
                   </tr>
                 )}
               </tbody>
@@ -393,7 +665,7 @@ export default function Inventory({ token }) {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={handleDiscard}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2 className="modal-title">{formMode === 'edit' ? 'Edit Product' : 'New Product'}</h2>
 
@@ -404,39 +676,30 @@ export default function Inventory({ token }) {
                   <span className="form-section-icon">📦</span>
                   Basic Information
                 </h3>
+                
+                {/* Product Name and Category - 2 Column Layout */}
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Product Name</label>
+                    <label className="form-label">Product Name <span className="required">*</span></label>
                     <input
                       type="text"
                       name="productName"
-                      className="form-input"
+                      className={`form-input ${formErrors.productName ? 'input-error' : ''}`}
                       placeholder="Enter product name"
                       value={formData.productName}
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.productName && (
+                      <div className="field-error">{formErrors.productName}</div>
+                    )}
                   </div>
 
-                  {formMode === 'edit' && editingProductId && (
-                    <div className="form-field">
-                      <label className="form-label">Product Code</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        value={products.find(p => p.productId === editingProductId)?.productCode || 'Auto-generated'}
-                        disabled
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Category</label>
+                    <label className="form-label">Category <span className="required">*</span></label>
                     <select
                       name="categoryId"
-                      className="form-input"
+                      className={`form-input ${formErrors.categoryId ? 'input-error' : ''}`}
                       value={formData.categoryId}
                       onChange={handleInputChange}
                       required
@@ -446,22 +709,39 @@ export default function Inventory({ token }) {
                         <option key={category.id} value={category.id}>{category.label}</option>
                       ))}
                     </select>
+                    {formErrors.categoryId && (
+                      <div className="field-error">{formErrors.categoryId}</div>
+                    )}
                   </div>
+                </div>
 
+                {/* Product Code - Only shown in Edit mode */}
+                {formMode === 'edit' && editingProductId && (
                   <div className="form-field">
-                    <label className="form-label">Supplier</label>
-                    <select
-                      name="supplierId"
+                    <label className="form-label">Product Code</label>
+                    <input
+                      type="text"
                       className="form-input"
-                      value={formData.supplierId}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Select supplier (optional)</option>
-                      {references.suppliers.map((supplier) => (
-                        <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
-                      ))}
-                    </select>
+                      value={products.find(p => p.productId === editingProductId)?.productCode || 'Auto-generated'}
+                      disabled
+                    />
                   </div>
+                )}
+
+                {/* Supplier - Full Width */}
+                <div className="form-field">
+                  <label className="form-label">Supplier</label>
+                  <select
+                    name="supplierId"
+                    className="form-input"
+                    value={formData.supplierId}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select supplier (optional)</option>
+                    {references.suppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -473,28 +753,38 @@ export default function Inventory({ token }) {
                 </h3>
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Buying Price</label>
+                    <label className="form-label">Buying Price <span className="required">*</span></label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0.01"
                       name="buyingPrice"
-                      className="form-input"
+                      className={`form-input ${formErrors.buyingPrice ? 'input-error' : ''}`}
                       value={formData.buyingPrice}
                       onChange={handleInputChange}
+                      placeholder="0.00"
                       required
                     />
+                    {formErrors.buyingPrice && (
+                      <div className="field-error">{formErrors.buyingPrice}</div>
+                    )}
                   </div>
                   <div className="form-field">
-                    <label className="form-label">Selling Price</label>
+                    <label className="form-label">Selling Price <span className="required">*</span></label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0.01"
                       name="sellingPrice"
-                      className="form-input"
+                      className={`form-input ${formErrors.sellingPrice ? 'input-error' : ''}`}
                       value={formData.sellingPrice}
                       onChange={handleInputChange}
+                      placeholder="0.00"
                       required
                     />
+                    {formErrors.sellingPrice && (
+                      <div className="field-error">{formErrors.sellingPrice}</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -507,60 +797,80 @@ export default function Inventory({ token }) {
                 </h3>
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Quantity</label>
+                    <label className="form-label">Quantity <span className="required">*</span></label>
                     <input
                       type="number"
+                      min="0"
                       name="quantity"
-                      className="form-input"
+                      className={`form-input ${formErrors.quantity ? 'input-error' : ''}`}
                       value={formData.quantity}
                       onChange={handleInputChange}
+                      placeholder="0"
                       required
                     />
+                    {formErrors.quantity && (
+                      <div className="field-error">{formErrors.quantity}</div>
+                    )}
                   </div>
                   <div className="form-field">
-                    <label className="form-label">Threshold Value</label>
+                    <label className="form-label">Threshold Value <span className="required">*</span></label>
                     <input
                       type="number"
+                      min="0"
                       name="thresholdValue"
-                      className="form-input"
+                      className={`form-input ${formErrors.thresholdValue ? 'input-error' : ''}`}
                       value={formData.thresholdValue}
                       onChange={handleInputChange}
+                      placeholder="0"
                       required
                     />
+                    {formErrors.thresholdValue && (
+                      <div className="field-error">{formErrors.thresholdValue}</div>
+                    )}
                   </div>
                 </div>
 
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Opening Stock</label>
+                    <label className="form-label">Opening Stock <span className="required">*</span></label>
                     <input
                       type="number"
+                      min="0"
                       name="openingStock"
-                      className="form-input"
+                      className={`form-input ${formErrors.openingStock ? 'input-error' : ''}`}
                       value={formData.openingStock}
                       onChange={handleInputChange}
+                      placeholder="0"
                       required
                     />
+                    {formErrors.openingStock && (
+                      <div className="field-error">{formErrors.openingStock}</div>
+                    )}
                   </div>
                   <div className="form-field">
-                    <label className="form-label">On the Way</label>
+                    <label className="form-label">On the Way <span className="required">*</span></label>
                     <input
                       type="number"
+                      min="0"
                       name="onTheWay"
-                      className="form-input"
+                      className={`form-input ${formErrors.onTheWay ? 'input-error' : ''}`}
                       value={formData.onTheWay}
                       onChange={handleInputChange}
+                      placeholder="0"
                       required
                     />
+                    {formErrors.onTheWay && (
+                      <div className="field-error">{formErrors.onTheWay}</div>
+                    )}
                   </div>
                 </div>
 
                 <div className="form-row-2">
                   <div className="form-field">
-                    <label className="form-label">Unit</label>
+                    <label className="form-label">Unit <span className="required">*</span></label>
                     <select
                       name="unit"
-                      className="form-input"
+                      className={`form-input ${formErrors.unit ? 'input-error' : ''}`}
                       value={formData.unit}
                       onChange={handleInputChange}
                       required
@@ -571,16 +881,25 @@ export default function Inventory({ token }) {
                         </option>
                       ))}
                     </select>
+                    {formErrors.unit && (
+                      <div className="field-error">{formErrors.unit}</div>
+                    )}
                   </div>
                   <div className="form-field">
                     <label className="form-label">Expiry Date</label>
                     <input
                       type="date"
                       name="expiryDate"
-                      className="form-input"
+                      className={`form-input ${formErrors.expiryDate ? 'input-error' : ''}`}
                       value={formData.expiryDate}
                       onChange={handleInputChange}
+                      min={new Date().toISOString().split('T')[0]}
                     />
+                    {formErrors.expiryDate && (
+                      <div className={formErrors.expiryDate.includes('Warning') ? 'field-warning' : 'field-error'}>
+                        {formErrors.expiryDate}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -589,18 +908,66 @@ export default function Inventory({ token }) {
               <div className="form-section">
                 <h3 className="form-section-title">
                   <span className="form-section-icon">📷</span>
-                  Media
+                  Product Image
                 </h3>
+                
                 <div className="form-field">
-                  <label className="form-label">Image URL</label>
-                  <input
-                    type="text"
-                    name="imageUrl"
-                    className="form-input"
-                    value={formData.imageUrl}
-                    onChange={handleInputChange}
-                    placeholder="Enter image URL (optional)"
-                  />
+                  <label className="form-label">Upload Product Image</label>
+                  <div className="image-upload-container">
+                    {uploadingImage ? (
+                      <div className="image-uploading">
+                        <div className="upload-spinner"></div>
+                        <p>Uploading image...</p>
+                      </div>
+                    ) : imagePreview || formData.imageUrl ? (
+                      <div className="image-preview-wrapper">
+                        <img 
+                          src={imagePreview || formData.imageUrl} 
+                          alt="Product preview" 
+                          className="image-preview"
+                          onError={(e) => {
+                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="14" fill="%2394a3b8"%3EImage not found%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                        <div className="image-info">
+                          <span className="image-filename">
+                            {imageFile ? `📁 ${imageFile.name}` : '🖼️ Stored in database'}
+                          </span>
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn-remove-image"
+                          onClick={removeImage}
+                          title="Remove image"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="image-upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="image-upload-input"
+                          disabled={uploadingImage}
+                        />
+                        <div className="image-upload-placeholder">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <p>Click to select and upload image</p>
+                          <span className="image-upload-hint">JPEG, PNG, WebP, GIF (Max 5MB)</span>
+                          <span className="image-upload-hint">Image will be stored in database</span>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                  {formErrors.imageUrl && (
+                    <div className="field-error">{formErrors.imageUrl}</div>
+                  )}
                 </div>
               </div>
               <div className="modal-actions">
@@ -614,15 +981,6 @@ export default function Inventory({ token }) {
             </form>
           </div>
         </div>
-      )}
-
-      {selectedProduct && (
-        <ProductDetails
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-          onEdit={openEditModal}
-          token={token}
-        />
       )}
     </div>
   );

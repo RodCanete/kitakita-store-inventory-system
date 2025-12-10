@@ -64,7 +64,8 @@ public class Product {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
     
-    @Column(name = "image_url")
+    @Lob
+    @Column(name = "image_url", columnDefinition = "MEDIUMTEXT")
     private String imageUrl;
     
     @CreationTimestamp
