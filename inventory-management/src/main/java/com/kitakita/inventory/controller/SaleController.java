@@ -38,6 +38,12 @@ public class SaleController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<SaleResponse> updateSale(@PathVariable Integer id, @RequestBody SaleRequest request) {
+        SaleResponse response = saleService.updateSale(id, request);
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSale(@PathVariable Integer id) {
         saleService.deleteSale(id);

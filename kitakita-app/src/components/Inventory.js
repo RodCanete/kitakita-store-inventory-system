@@ -52,6 +52,9 @@ export default function Inventory({ token }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Add common units array for the dropdown
   const commonUnits = [
@@ -428,15 +431,29 @@ export default function Inventory({ token }) {
     }
   };
 
-  const handleDelete = async (productId) => {
-    if (!token) return;
-    if (!window.confirm('Delete this product?')) return;
+  const openDeleteConfirm = (product) => {
+    setProductToDelete(product);
+    setShowDeleteConfirm(true);
+  };
+
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    setProductToDelete(null);
+  };
+
+  const handleDelete = async () => {
+    if (!token || !productToDelete) return;
+    
+    setDeleting(true);
     setError(null);
     try {
-      await ProductsApi.remove(productId, token);
+      await ProductsApi.remove(productToDelete.productId, token);
       await loadProducts();
+      closeDeleteConfirm();
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -619,7 +636,10 @@ export default function Inventory({ token }) {
                         </button>
                         <button 
                           className="action-btn-icon delete-btn-icon" 
-                          onClick={() => handleDelete(product.productId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openDeleteConfirm(product);
+                          }}
                           title="Delete product"
                         >
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -979,6 +999,34 @@ export default function Inventory({ token }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && productToDelete && (
+        <div className="modal-overlay" onClick={closeDeleteConfirm}>
+          <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Product</h3>
+            <p>Are you sure you want to delete <strong>{productToDelete.productName}</strong>? This action cannot be undone.</p>
+            <div className="confirm-actions">
+              <button 
+                type="button" 
+                className="btn-discard" 
+                onClick={closeDeleteConfirm}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn-confirm-delete" 
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
           </div>
         </div>
       )}

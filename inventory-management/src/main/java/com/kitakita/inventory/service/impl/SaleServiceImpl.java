@@ -116,6 +116,67 @@ public class SaleServiceImpl implements SaleService {
 
     @Override
     @Transactional
+    public SaleResponse updateSale(Integer id, SaleRequest request) {
+        User currentUser = securityUtils.getCurrentUser();
+        Sale sale = saleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found"));
+        
+        // Check if sale belongs to current user
+        if (!sale.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResourceNotFoundException("Sale not found");
+        }
+        
+        // Get the product
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+        
+        // Check if product belongs to current user
+        if (!product.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new ResourceNotFoundException("Product not found");
+        }
+        
+        // Calculate quantity difference
+        int quantityDifference = request.getQuantity() - sale.getQuantity();
+        
+        // If changing product, restore old product quantity and check new product stock
+        if (!sale.getProduct().getProductId().equals(request.getProductId())) {
+            // Restore old product quantity
+            Product oldProduct = sale.getProduct();
+            oldProduct.setQuantity(oldProduct.getQuantity() + sale.getQuantity());
+            productRepository.save(oldProduct);
+            
+            // Check if new product has enough stock
+            if (product.getQuantity() < request.getQuantity()) {
+                throw new IllegalArgumentException("Insufficient stock for product: " + product.getProductName());
+            }
+            
+            // Deduct from new product
+            product.setQuantity(product.getQuantity() - request.getQuantity());
+        } else {
+            // Same product - adjust quantity
+            int newProductQuantity = product.getQuantity() + quantityDifference;
+            if (newProductQuantity < 0) {
+                throw new IllegalArgumentException("Insufficient stock for product: " + product.getProductName());
+            }
+            product.setQuantity(newProductQuantity);
+        }
+        
+        productRepository.save(product);
+        
+        // Update sale
+        sale.setProduct(product);
+        sale.setQuantity(request.getQuantity());
+        sale.setUnitPrice(request.getUnitPrice());
+        sale.setTotalValue(request.getTotalValue());
+        sale.setBuyingPrice(request.getBuyingPrice());
+        sale.setNotes(request.getNotes());
+        
+        Sale updated = saleRepository.save(sale);
+        return mapToResponse(updated);
+    }
+
+    @Override
+    @Transactional
     public void deleteSale(Integer id) {
         User currentUser = securityUtils.getCurrentUser();
         Sale sale = saleRepository.findById(id)
