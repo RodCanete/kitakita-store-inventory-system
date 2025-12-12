@@ -6,7 +6,7 @@ import { ProductsApi } from '../api/client';
 const emptyForm = {
   productName: '',
   categoryId: '',
-  supplierId: '',
+  supplierIds: [],
   buyingPrice: '',
   sellingPrice: '',
   unit: '',
@@ -55,6 +55,8 @@ export default function Inventory({ token }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
 
   // Add common units array for the dropdown
   const commonUnits = [
@@ -107,10 +109,20 @@ export default function Inventory({ token }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Handle multi-select for suppliers
+    if (name === 'supplierIds') {
+      const selectedOptions = Array.from(e.target.selectedOptions, option => Number(option.value));
+      setFormData((prev) => ({
+        ...prev,
+        [name]: selectedOptions
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     
     // Real-time validation as user types
     const errors = {};
@@ -339,6 +351,8 @@ export default function Inventory({ token }) {
     setImageFile(null);
     setImagePreview(null);
     setFormErrors({});
+    setSupplierSearch('');
+    setShowSupplierDropdown(false);
   };
 
   const handleDiscard = () => {
@@ -354,10 +368,12 @@ export default function Inventory({ token }) {
 
   const openEditModal = (product) => {
     setFormMode('edit');
+    // Handle both old format (supplierId) and new format (supplierIds)
+    const supplierIds = product.supplierIds || (product.supplierId ? [product.supplierId] : []);
     setFormData({
       productName: product.productName || '',
       categoryId: product.categoryId || '',
-      supplierId: product.supplierId || '',
+      supplierIds: supplierIds,
       buyingPrice: product.buyingPrice || '',
       sellingPrice: product.sellingPrice || '',
       unit: product.unit || '',
@@ -386,7 +402,9 @@ export default function Inventory({ token }) {
   const toPayload = () => ({
     productName: formData.productName,
     categoryId: formData.categoryId ? Number(formData.categoryId) : null,
-    supplierId: formData.supplierId ? Number(formData.supplierId) : null,
+    supplierIds: formData.supplierIds && formData.supplierIds.length > 0 
+      ? formData.supplierIds.map(id => Number(id)) 
+      : [],
     buyingPrice: Number(formData.buyingPrice),
     sellingPrice: Number(formData.sellingPrice),
     unit: formData.unit,
@@ -508,7 +526,6 @@ export default function Inventory({ token }) {
 
   return (
     <div className="inventory">
-      <h1 className="page-title">Inventory</h1>
       {error && <div className="form-error" role="alert">{error}</div>}
 
       <div className="products-section">
@@ -748,20 +765,91 @@ export default function Inventory({ token }) {
                   </div>
                 )}
 
-                {/* Supplier - Full Width */}
+                {/* Supplier - Tag-based Multi-select */}
                 <div className="form-field">
-                  <label className="form-label">Supplier</label>
-                  <select
-                    name="supplierId"
-                    className="form-input"
-                    value={formData.supplierId}
-                    onChange={handleInputChange}
-                  >
-                    <option value="">Select supplier (optional)</option>
-                    {references.suppliers.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>{supplier.label}</option>
-                    ))}
-                  </select>
+                  <label className="form-label">Suppliers (optional)</label>
+                  <div className="supplier-tag-input-wrapper">
+                    {/* Selected Suppliers as Tags */}
+                    {formData.supplierIds.length > 0 && (
+                      <div className="supplier-tags-container">
+                        {formData.supplierIds.map((supplierId) => {
+                          const supplier = references.suppliers.find(s => s.id === supplierId);
+                          if (!supplier) return null;
+                          return (
+                            <span key={supplierId} className="supplier-tag">
+                              {supplier.label}
+                              <button
+                                type="button"
+                                className="supplier-tag-remove"
+                                onClick={() => {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    supplierIds: prev.supplierIds.filter(id => id !== supplierId)
+                                  }));
+                                }}
+                                aria-label={`Remove ${supplier.label}`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Search Input */}
+                    <div className="supplier-input-container">
+                      <input
+                        type="text"
+                        className="form-input supplier-search-input"
+                        placeholder="Search and add suppliers..."
+                        value={supplierSearch}
+                        onChange={(e) => {
+                          setSupplierSearch(e.target.value);
+                          setShowSupplierDropdown(true);
+                        }}
+                        onFocus={() => setShowSupplierDropdown(true)}
+                        onBlur={() => {
+                          // Delay to allow click on dropdown items
+                          setTimeout(() => setShowSupplierDropdown(false), 200);
+                        }}
+                      />
+                      
+                      {/* Dropdown with filtered suppliers */}
+                      {showSupplierDropdown && supplierSearch.trim() && (
+                        <div className="supplier-dropdown">
+                          {references.suppliers
+                            .filter(supplier => 
+                              !formData.supplierIds.includes(supplier.id) &&
+                              supplier.label.toLowerCase().includes(supplierSearch.toLowerCase())
+                            )
+                            .map((supplier) => (
+                              <div
+                                key={supplier.id}
+                                className="supplier-dropdown-item"
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); // Prevent onBlur from firing
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    supplierIds: [...prev.supplierIds, supplier.id]
+                                  }));
+                                  setSupplierSearch('');
+                                  setShowSupplierDropdown(false);
+                                }}
+                              >
+                                {supplier.label}
+                              </div>
+                            ))}
+                          {references.suppliers.filter(supplier => 
+                            !formData.supplierIds.includes(supplier.id) &&
+                            supplier.label.toLowerCase().includes(supplierSearch.toLowerCase())
+                          ).length === 0 && (
+                            <div className="supplier-dropdown-empty">No suppliers found</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

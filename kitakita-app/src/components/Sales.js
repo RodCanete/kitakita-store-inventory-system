@@ -374,7 +374,6 @@ export default function Sales({ token }) {
   return (
     <div className="sales">
       <div className="sales-header">
-        <h1 className="page-title">Sales</h1>
         {error && <div className="form-error" role="alert">{error}</div>}
         <div className="sales-actions">
           <button className="btn-primary-icon" onClick={openCreateModal}>

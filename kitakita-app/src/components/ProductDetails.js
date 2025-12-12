@@ -74,6 +74,15 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
     }
   }, [product, token]);
 
+  // Debug: Log product to see its structure
+  useEffect(() => {
+    if (product) {
+      console.log('Product object:', product);
+      console.log('Product suppliers:', product.suppliers);
+      console.log('Product supplierName:', product.supplierName);
+    }
+  }, [product]);
+
   const fetchProductHistory = async () => {
     if (!product || !token) return;
     
@@ -179,6 +188,8 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       e.stopPropagation();
     }
     console.log('Opening purchase modal for product:', product.productId);
+    // Switch to purchases tab when opening purchase modal
+    setActiveTab('purchases');
     setPurchaseFormData({
       productId: product.productId,
       supplierId: '',
@@ -235,6 +246,8 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
       
       // Close the modal
       setShowPurchaseModal(false);
+      // Stay on the purchases tab after saving so the user doesn’t jump back to inventory
+      setActiveTab('purchases');
       
       // Reset form
       setPurchaseFormData({
@@ -574,14 +587,47 @@ export default function ProductDetails({ product, onClose, onEdit, token }) {
               {/* Supplier Details */}
               <div className="supplier-details-section">
                 <h3 className="section-title">Supplier Details</h3>
-                <div className="detail-item">
-                  <span className="detail-label">Supplier name:</span>
-                  <span className="detail-value">{productData.supplierName || 'Not specified'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Contact Number:</span>
-                  <span className="detail-value">{productData.contactNumber || 'Not specified'}</span>
-                </div>
+                {product.suppliers && Array.isArray(product.suppliers) && product.suppliers.length > 0 ? (
+                  product.suppliers.map((supplier, index) => (
+                    <div key={supplier.supplierId || index} style={{ marginBottom: index < product.suppliers.length - 1 ? '16px' : '0', paddingBottom: index < product.suppliers.length - 1 ? '16px' : '0', borderBottom: index < product.suppliers.length - 1 ? '1px solid #e2e8f0' : 'none' }}>
+                      <div className="detail-item">
+                        <span className="detail-label">Supplier name:</span>
+                        <span className="detail-value">{supplier.supplierName || 'Not specified'}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="detail-label">Contact Number:</span>
+                        <span className="detail-value">{supplier.contactNumber || 'Not specified'}</span>
+                      </div>
+                      {supplier.email && (
+                        <div className="detail-item">
+                          <span className="detail-label">Email:</span>
+                          <span className="detail-value">{supplier.email}</span>
+                        </div>
+                      )}
+                      {supplier.address && (
+                        <div className="detail-item">
+                          <span className="detail-label">Address:</span>
+                          <span className="detail-value">{supplier.address}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : product.supplierName && product.supplierName !== 'N/A' ? (
+                  <>
+                    <div className="detail-item">
+                      <span className="detail-label">Supplier name:</span>
+                      <span className="detail-value">{product.supplierName}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span className="detail-label">Contact Number:</span>
+                      <span className="detail-value">{product.supplierContact || 'Not specified'}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="detail-item">
+                    <span className="detail-value" style={{ color: '#94a3b8', fontStyle: 'italic' }}>No suppliers assigned to this product</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

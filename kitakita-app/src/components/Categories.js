@@ -157,7 +157,6 @@ export default function Categories({ token }) {
   };
   return (
     <div className="categories">
-      <h1 className="page-title">Categories</h1>
       {error && <div className="form-error" role="alert">{error}</div>}
 
       <div className="categories-section">
