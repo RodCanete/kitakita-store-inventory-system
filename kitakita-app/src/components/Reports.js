@@ -70,8 +70,6 @@ export default function Reports({ token }) {
 
   return (
     <div className="reports">
-      <h1 className="page-title">Reports</h1>
-      
       {loading && <div className="info-banner">Loading reports data…</div>}
       {error && <div className="form-error" role="alert">{error}</div>}
 

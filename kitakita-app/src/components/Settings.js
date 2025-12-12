@@ -48,8 +48,6 @@ export default function Settings({ user, token, onDeleteAccount }) {
 
   return (
     <div className="settings-simple">
-      <h1 className="page-title">Settings</h1>
-      
       <div className="settings-simple-container">
         <div className="settings-simple-section">
           <h2 className="settings-simple-title">Account Details</h2>

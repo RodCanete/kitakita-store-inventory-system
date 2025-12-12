@@ -72,7 +72,6 @@ export default function Dashboard({ token }) {
 
   return (
     <div className="dashboard">
-      <h1 className="page-title">Dashboard</h1>
       {loading && <div className="info-banner">Loading latest inventory insights…</div>}
       {error && <div className="form-error" role="alert">{error}</div>}
 
